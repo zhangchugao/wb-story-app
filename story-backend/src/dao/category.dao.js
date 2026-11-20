@@ -2,8 +2,8 @@
 
 const db = require('../db');
 
-function all() {
-  return db.prepare('SELECT id, name, icon, sort_order FROM categories ORDER BY sort_order ASC, id ASC').all();
+async function all() {
+  return db.query('SELECT id, name, icon, sort_order FROM categories ORDER BY sort_order ASC, id ASC');
 }
 
 module.exports = { all };

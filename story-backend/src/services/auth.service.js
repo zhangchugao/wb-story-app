@@ -30,9 +30,9 @@ async function code2session(code) {
 async function login({ code, nickname, avatarUrl }) {
   if (!code) throw new ApiError('缺少 code', 400);
   const { openid, unionid } = await code2session(code);
-  let user = userDao.findByOpenid(openid);
+  let user = await userDao.findByOpenid(openid);
   if (!user) {
-    user = userDao.create({ openid, unionId: unionid, nickname: nickname || '听友', avatarUrl: avatarUrl || '' });
+    user = await userDao.create({ openid, unionId: unionid, nickname: nickname || '听友', avatarUrl: avatarUrl || '' });
   }
   return user;
 }

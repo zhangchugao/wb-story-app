@@ -59,6 +59,18 @@
     </view>
   </view>
 
+  <!-- 背景音乐 -->
+  <view class="bgm-bar">
+    <view class="bgm-switch {{bgmOn ? 'bgm-switch-on' : ''}}" bindtap="toggleBgm">
+      <view class="bgm-knob {{bgmOn ? 'bgm-knob-on' : ''}}"></view>
+    </view>
+    <view class="bgm-text" bindtap="toggleBgm">
+      <text class="bgm-title {{bgmOn ? '' : 'muted'}}">背景音乐</text>
+      <text class="bgm-track muted">{{bgmName}}</text>
+    </view>
+    <view class="bgm-cycle {{bgmOn ? '' : 'muted'}}" bindtap="cycleBgmTrack">换一首</view>
+  </view>
+
   <view class="tip muted">内测版 · 拖动进度条可跳转播放位置</view>
 </view>
 

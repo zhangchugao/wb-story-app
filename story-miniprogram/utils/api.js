@@ -1,7 +1,11 @@
 'use strict';
 
-// 后端地址。真机调试时把 localhost 改成电脑局域网 IP，并确保手机同网段。
-const BASE = 'http://localhost:3000/api';
+// 后端地址。
+// - 开发者工具/模拟器：用 localhost 即可
+// - 真机预览：改成电脑的局域网 IP（ipconfig 查看 IPv4 地址），且手机与电脑同一 WiFi
+// - 生产环境：改成正式服务器域名（需 https + 在小程序后台配置 request 合法域名）
+const HOST = 'http://192.168.104.146:3000'; // 局域网调试地址，发布前改回正式域名
+const BASE = HOST + '/api';
 
 // 内置兜底数据：后端未启动或预览环境下自动降级，页面不会白屏。
 const MOCK = require('./mock');
@@ -74,3 +78,4 @@ const api = {
 };
 
 module.exports = api;
+api.HOST = HOST; // 播放器等模块拼接音频绝对地址用

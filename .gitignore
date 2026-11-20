@@ -18,3 +18,10 @@
 **/*.log
 .DS_Store
 Thumbs.db
+
+# SQLite 版归档（git 历史中已有完整版本，无需重复入库）
+story-backend/_legacy/
+
+# 后端生成的静态文件（封面可由 tools 脚本重新生成）
+**/storage/static/*
+!**/storage/static/.gitkeep

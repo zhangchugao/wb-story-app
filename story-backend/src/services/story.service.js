@@ -1,12 +1,13 @@
 'use strict';
 
 const storyDao = require('../dao/story.dao');
+const categoryDao = require('../dao/category.dao');
 const favoriteDao = require('../dao/favorite.dao');
 const historyDao = require('../dao/history.dao');
 const { notFound } = require('../utils/response');
 
 function getCategories() {
-  return require('../dao/category.dao').all();
+  return categoryDao.all();
 }
 
 function getStories(query) {
@@ -26,12 +27,14 @@ function getHot() {
   return storyDao.hot(10);
 }
 
-function getDetail(id, userId) {
-  const story = storyDao.findById(id);
+async function getDetail(id, userId) {
+  const [story, episodes, favorited, progress] = await Promise.all([
+    storyDao.findById(id),
+    storyDao.episodesOf(id),
+    userId ? favoriteDao.isFavorited(userId, id) : Promise.resolve(false),
+    userId ? historyDao.getProgress(userId, id) : Promise.resolve(null),
+  ]);
   if (!story) throw notFound('故事不存在或已下架');
-  const episodes = storyDao.episodesOf(id);
-  const favorited = userId ? favoriteDao.isFavorited(userId, id) : false;
-  const progress = userId ? historyDao.getProgress(userId, id) : null;
   return { ...story, episodes, favorited, progress: progress || null };
 }
 
@@ -39,9 +42,9 @@ function getHotKeywords() {
   return storyDao.hotKeywords(10);
 }
 
-function recordPlay(id) {
-  if (!storyDao.findById(id)) throw notFound('故事不存在');
-  storyDao.incrPlayCount(id);
+async function recordPlay(id) {
+  if (!await storyDao.findById(id)) throw notFound('故事不存在');
+  await storyDao.incrPlayCount(id);
 }
 
 module.exports = { getCategories, getStories, getHot, getDetail, getHotKeywords, recordPlay };

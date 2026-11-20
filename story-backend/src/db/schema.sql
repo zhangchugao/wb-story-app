@@ -1,95 +1,98 @@
--- 分类表
+-- MySQL 版表结构（MySQL 5.7+，utf8mb4）
+-- 说明：CREATE INDEX 不支持 IF NOT EXISTS，重复建索引的报错在 db/index.js 中忽略
+
 CREATE TABLE IF NOT EXISTS categories (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  name        TEXT    NOT NULL,
-  icon        TEXT,
-  sort_order  INTEGER DEFAULT 0,
-  created_at  TEXT    DEFAULT (datetime('now'))
-);
+  id          INT          NOT NULL AUTO_INCREMENT,
+  name        VARCHAR(100) NOT NULL,
+  icon        VARCHAR(50)  DEFAULT '',
+  sort_order  INT          DEFAULT 0,
+  created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 故事表
 CREATE TABLE IF NOT EXISTS stories (
-  id           INTEGER PRIMARY KEY AUTOINCREMENT,
-  title        TEXT    NOT NULL,
-  author       TEXT    DEFAULT '',
-  narrator     TEXT    DEFAULT '',
-  category_id  INTEGER,
-  cover_url    TEXT    DEFAULT '',
-  description  TEXT    DEFAULT '',
-  audio_url    TEXT    DEFAULT '',
-  duration     INTEGER DEFAULT 0,          -- 总时长（秒）
-  play_count   INTEGER DEFAULT 0,
-  status       INTEGER DEFAULT 1,          -- 1 上架 0 下架
-  sort_order   INTEGER DEFAULT 0,
-  created_at   TEXT    DEFAULT (datetime('now')),
-  updated_at   TEXT    DEFAULT (datetime('now')),
-  FOREIGN KEY (category_id) REFERENCES categories(id)
-);
+  id           INT           NOT NULL AUTO_INCREMENT,
+  title        VARCHAR(200)  NOT NULL,
+  author       VARCHAR(100)  DEFAULT '',
+  narrator     VARCHAR(100)  DEFAULT '',
+  category_id  INT           DEFAULT NULL,
+  cover_url    VARCHAR(500)  DEFAULT '',
+  description  TEXT,
+  audio_url    VARCHAR(500)  DEFAULT '',
+  duration     INT           DEFAULT 0,
+  play_count   INT           DEFAULT 0,
+  status       TINYINT       DEFAULT 1,
+  sort_order   INT           DEFAULT 0,
+  created_at   DATETIME      DEFAULT CURRENT_TIMESTAMP,
+  updated_at   DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_category (category_id),
+  KEY idx_status_sort (status, sort_order),
+  CONSTRAINT fk_story_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 分集表（长故事按集播放）
 CREATE TABLE IF NOT EXISTS episodes (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  story_id    INTEGER NOT NULL,
-  title       TEXT    NOT NULL,
-  episode_no  INTEGER NOT NULL,
-  audio_url   TEXT    DEFAULT '',
-  duration    INTEGER DEFAULT 0,
-  created_at  TEXT    DEFAULT (datetime('now')),
-  FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
-);
+  id          INT          NOT NULL AUTO_INCREMENT,
+  story_id    INT          NOT NULL,
+  title       VARCHAR(200) NOT NULL,
+  episode_no  INT          NOT NULL,
+  audio_url   VARCHAR(500) DEFAULT '',
+  duration    INT          DEFAULT 0,
+  created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_episode_story (story_id, episode_no),
+  CONSTRAINT fk_episode_story FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 用户表
 CREATE TABLE IF NOT EXISTS users (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  openid      TEXT    NOT NULL UNIQUE,
-  union_id    TEXT    DEFAULT '',
-  nickname    TEXT    DEFAULT '听友',
-  avatar_url  TEXT    DEFAULT '',
-  created_at  TEXT    DEFAULT (datetime('now')),
-  updated_at  TEXT    DEFAULT (datetime('now'))
-);
+  id          INT          NOT NULL AUTO_INCREMENT,
+  openid      VARCHAR(100) NOT NULL,
+  union_id    VARCHAR(100) DEFAULT '',
+  nickname    VARCHAR(100) DEFAULT '听友',
+  avatar_url  VARCHAR(500) DEFAULT '',
+  created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  updated_at  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_openid (openid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 收藏表
 CREATE TABLE IF NOT EXISTS favorites (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id     INTEGER NOT NULL,
-  story_id    INTEGER NOT NULL,
-  created_at  TEXT    DEFAULT (datetime('now')),
-  UNIQUE (user_id, story_id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
-);
+  id          INT      NOT NULL AUTO_INCREMENT,
+  user_id     INT      NOT NULL,
+  story_id    INT      NOT NULL,
+  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_user_story (user_id, story_id),
+  CONSTRAINT fk_fav_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_fav_story FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 播放历史表（每个故事一条，记录最近一次进度，支持断点续听）
 CREATE TABLE IF NOT EXISTS play_history (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id     INTEGER NOT NULL,
-  story_id    INTEGER NOT NULL,
-  episode_id  INTEGER,
-  position    INTEGER DEFAULT 0,           -- 播放位置（秒）
-  updated_at  TEXT    DEFAULT (datetime('now')),
-  UNIQUE (user_id, story_id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
-);
+  id          INT      NOT NULL AUTO_INCREMENT,
+  user_id     INT      NOT NULL,
+  story_id    INT      NOT NULL,
+  episode_id  INT      DEFAULT NULL,
+  position    INT      DEFAULT 0,
+  updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_history_user_story (user_id, story_id),
+  CONSTRAINT fk_hist_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_hist_story FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 热搜词表
 CREATE TABLE IF NOT EXISTS hot_keywords (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  keyword     TEXT    NOT NULL,
-  weight      INTEGER DEFAULT 0,
-  sort_order  INTEGER DEFAULT 0
-);
+  id          INT          NOT NULL AUTO_INCREMENT,
+  keyword     VARCHAR(100) NOT NULL,
+  weight      INT          DEFAULT 0,
+  sort_order  INT          DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 管理员表
 CREATE TABLE IF NOT EXISTS admins (
-  id           INTEGER PRIMARY KEY AUTOINCREMENT,
-  username     TEXT    NOT NULL UNIQUE,
-  password_hash TEXT   NOT NULL,
-  created_at   TEXT    DEFAULT (datetime('now'))
-);
-
-CREATE INDEX IF NOT EXISTS idx_stories_category ON stories(category_id);
-CREATE INDEX IF NOT EXISTS idx_stories_status_sort ON stories(status, sort_order);
-CREATE INDEX IF NOT EXISTS idx_episodes_story ON episodes(story_id, episode_no);
-CREATE INDEX IF NOT EXISTS idx_history_user_updated ON play_history(user_id, updated_at);
+  id            INT          NOT NULL AUTO_INCREMENT,
+  username      VARCHAR(100) NOT NULL,
+  password_hash VARCHAR(128) NOT NULL,
+  created_at    DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

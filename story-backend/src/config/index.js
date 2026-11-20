@@ -18,7 +18,12 @@ const config = {
     mockLogin: toBool(process.env.WX_MOCK_LOGIN) || !(process.env.WX_APPID && process.env.WX_SECRET),
   },
   db: {
-    path: path.resolve(__dirname, '../../', process.env.DB_PATH || './data/story.db'),
+    host: process.env.DB_HOST || '127.0.0.1',
+    port: Number(process.env.DB_PORT || 3306),
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || 'root',
+    name: process.env.DB_NAME || 'story_app',
+    connectionLimit: Number(process.env.DB_POOL_SIZE || 10),
   },
   audio: {
     dir: path.resolve(__dirname, '../../', process.env.AUDIO_DIR || './storage/audio'),

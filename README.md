@@ -6,7 +6,7 @@
 
 ```
 .
-├── story-backend/       # Node.js 后端（Express + SQLite）
+├── story-backend/       # Node.js 后端（Express + MySQL）
 ├── story-miniprogram/   # 微信小程序（原生 WXML/WXSS）
 └── story-admin/         # 后台管理系统（Vue3 + TS + SCSS + Vite）
 ```
@@ -23,7 +23,7 @@ npm start
 
 服务运行在 http://localhost:3000，默认管理员 `admin` / `admin123`。
 
-> 数据库用 Node 内置 `node:sqlite`，需要 Node >= 22.5，无需编译原生模块。服务启动自动建表并写入种子数据。
+> 数据库用 MySQL 5.7+，连接配置见 `story-backend/.env`。服务启动自动建库建表并写入种子数据。
 
 ### 2. 后台管理系统
 
@@ -43,7 +43,7 @@ npm run dev        # http://localhost:5173
 
 | 模块 | 技术栈 | 说明 |
 |---|---|---|
-| story-backend | Node.js + Express + SQLite | 小程序 API + 管理端 API，JWT 鉴权，音频 Range 流 |
+| story-backend | Node.js + Express + MySQL | 小程序 API + 管理端 API，JWT 鉴权，音频 Range 流 |
 | story-miniprogram | 原生微信小程序 | 4 个 Tab + 详情页/播放器，3D 清新风格 |
 | story-admin | Vue3 + TypeScript + SCSS + Vite | 内容管理后台，H5 响应式，Element Plus 按需引入 |
 
@@ -53,6 +53,6 @@ npm run dev        # http://localhost:5173
 
 ## 注意
 
-- 三个项目共享 `story-backend` 的 SQLite 数据库，在后台改数据小程序会同步生效。
+- 三个项目共享 `story-backend` 的 MySQL 数据库，在后台改数据小程序会同步生效。
 - 种子数据中的音频/封面是占位路径，需在后台「资源管理」上传真实文件后填入故事。
 - 生产环境务必修改 JWT 密钥与管理员密码（见 `story-backend/.env.example`）。

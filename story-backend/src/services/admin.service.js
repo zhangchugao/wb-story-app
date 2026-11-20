@@ -4,9 +4,9 @@ const crypto = require('crypto');
 const adminDao = require('../dao/admin.dao');
 const { ApiError, notFound, badRequest } = require('../utils/response');
 
-function login(username, password) {
+async function login(username, password) {
   if (!username || !password) throw badRequest('请输入账号和密码');
-  const admin = adminDao.findAdmin(String(username).trim());
+  const admin = await adminDao.findAdmin(String(username).trim());
   const hash = crypto.createHash('sha256').update(String(password)).digest('hex');
   if (!admin || admin.password_hash !== hash) {
     throw new ApiError('账号或密码错误', 401);
@@ -41,29 +41,29 @@ function createStory(body) {
   });
 }
 
-function updateStory(id, body) {
-  if (!adminDao.findStory(id)) throw notFound('故事不存在');
+async function updateStory(id, body) {
+  if (!await adminDao.findStory(id)) throw notFound('故事不存在');
   return adminDao.updateStory(id, body);
 }
 
-function deleteStory(id) {
-  if (!adminDao.findStory(id)) throw notFound('故事不存在');
-  adminDao.deleteStory(id);
+async function deleteStory(id) {
+  if (!await adminDao.findStory(id)) throw notFound('故事不存在');
+  await adminDao.deleteStory(id);
   return { deleted: true };
 }
 
-function setStoryStatus(id, status) {
-  if (!adminDao.findStory(id)) throw notFound('故事不存在');
+async function setStoryStatus(id, status) {
+  if (!await adminDao.findStory(id)) throw notFound('故事不存在');
   return adminDao.setStoryStatus(id, Number(status) === 1 ? 1 : 0);
 }
 
-function listEpisodes(storyId) {
-  if (!adminDao.findStory(storyId)) throw notFound('故事不存在');
+async function listEpisodes(storyId) {
+  if (!await adminDao.findStory(storyId)) throw notFound('故事不存在');
   return adminDao.episodesOf(storyId);
 }
 
-function createEpisode(storyId, body) {
-  if (!adminDao.findStory(storyId)) throw notFound('故事不存在');
+async function createEpisode(storyId, body) {
+  if (!await adminDao.findStory(storyId)) throw notFound('故事不存在');
   if (!body.title || !String(body.title).trim()) throw badRequest('分集标题不能为空');
   return adminDao.createEpisode(storyId, {
     title: String(body.title).trim(),
@@ -77,8 +77,8 @@ function updateEpisode(id, body) {
   return adminDao.updateEpisode(id, body);
 }
 
-function deleteEpisode(id) {
-  adminDao.deleteEpisode(id);
+async function deleteEpisode(id) {
+  await adminDao.deleteEpisode(id);
   return { deleted: true };
 }
 
@@ -95,8 +95,8 @@ function updateCategory(id, body) {
   return adminDao.updateCategory(id, body);
 }
 
-function deleteCategory(id) {
-  if (!adminDao.deleteCategory(id)) {
+async function deleteCategory(id) {
+  if (!await adminDao.deleteCategory(id)) {
     throw new ApiError('该分类下还有故事，不能删除', 409);
   }
   return { deleted: true };
