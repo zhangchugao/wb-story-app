@@ -1,0 +1,30 @@
+<view class="page">
+  <view class="head">
+    <view class="section-title">{{title}}</view>
+    <view class="section-sub muted">{{list.length}} 个故事</view>
+  </view>
+
+  <view class="list">
+    <view class="row stage-3d" wx:for="{{list}}" wx:key="id">
+      <view class="row-card lift" hover-class="lift-hover" bindtap="goDetail" data-id="{{item.id}}">
+        <view class="row-cover cover" style="background:linear-gradient(135deg,{{item.coverFrom}},{{item.coverTo}})">
+          <text class="cover-label row-label">{{item.title}}</text>
+        </view>
+        <view class="row-body">
+          <view class="row-title">{{item.title}}</view>
+          <view class="row-desc muted">{{item.author}} · {{item.durationText}}</view>
+          <view class="progress-line" wx:if="{{type === 'history' && item.position > 0}}">
+            <view class="progress-bar">
+              <view class="progress-fill" style="width:{{item.position / item.durationRaw * 100}}%"></view>
+            </view>
+            <text class="progress-text muted">已听 {{item.positionText}}</text>
+          </view>
+        </view>
+        <view class="row-play" catchtap="goPlay" data-id="{{item.id}}">▶</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty muted" wx:if="{{!loading && list.length === 0}}">这里还空空的，去挑个故事吧</view>
+  <view class="loading muted" wx:if="{{loading}}">加载中…</view>
+</view>

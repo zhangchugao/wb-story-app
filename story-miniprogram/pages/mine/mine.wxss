@@ -1,0 +1,70 @@
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+  padding: 40rpx 32rpx;
+  border-radius: 32rpx;
+  transform: rotateX(4deg);
+}
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  flex-shrink: 0;
+  border-radius: 36rpx;
+  background: linear-gradient(135deg, #34d399, #10b981);
+  color: #fff;
+  font-size: 56rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 14rpx 30rpx rgba(16, 185, 129, 0.3);
+}
+.profile-info { flex: 1; min-width: 0; }
+.nickname { font-size: 38rpx; font-weight: 800; }
+.profile-desc { font-size: 24rpx; margin-top: 10rpx; }
+
+.stats {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 24rpx;
+}
+.stat-item {
+  flex: 1;
+  padding: 30rpx;
+  border-radius: 26rpx;
+  text-align: center;
+}
+.stat-num { font-size: 48rpx; font-weight: 800; color: #10b981; }
+.stat-label { font-size: 24rpx; margin-top: 8rpx; }
+
+.menu { margin-top: 36rpx; }
+.menu-group { border-radius: 26rpx; overflow: hidden; padding: 8rpx 0; }
+.menu-row {
+  display: flex;
+  align-items: center;
+  padding: 26rpx 30rpx;
+  gap: 22rpx;
+  transition: background 0.2s;
+}
+.menu-row-hover { background: #f5faf7; }
+.menu-icon {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 18rpx;
+  background: var(--mint-soft);
+  color: var(--mint-deep);
+  font-size: 30rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.menu-text { flex: 1; font-size: 29rpx; }
+.menu-arrow { font-size: 40rpx; color: #c4cbd2; }
+
+.footer {
+  text-align: center;
+  font-size: 22rpx;
+  margin-top: 70rpx;
+}

@@ -1,0 +1,89 @@
+<view class="page">
+  <!-- 顶部问候 -->
+  <view class="greeting">
+    <view>
+      <text class="eyebrow">DAILY STORIES</text>
+      <view class="greeting-title">今天，听点好故事</view>
+    </view>
+    <view class="greeting-badge">♪</view>
+  </view>
+
+  <!-- 焦点 Banner：3D 悬浮 -->
+  <view class="stage-3d" wx:if="{{featured}}">
+    <view class="featured lift" hover-class="lift-hover" bindtap="goDetail" data-id="{{featured.id}}">
+      <view class="featured-cover cover" style="background:linear-gradient(135deg,{{featured.coverFrom}},{{featured.coverTo}})">
+        <text class="cover-label">{{featured.title}}</text>
+        <view class="featured-play">▶</view>
+      </view>
+      <view class="featured-info">
+        <text class="pill">{{featured.tag}}</text>
+        <view class="featured-title">{{featured.title}}</view>
+        <view class="featured-desc">{{featured.description}}</view>
+        <view class="featured-meta muted">{{featured.narrator}} · {{featured.durationText}} · {{featured.playText}}次播放</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类快捷入口 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-title">分类</text>
+      <text class="section-sub">按心情挑一个</text>
+    </view>
+    <scroll-view scroll-x class="cat-scroll">
+      <view class="cat-list">
+        <view class="cat-item stage-3d" wx:for="{{categories}}" wx:key="id" bindtap="goCategory" data-id="{{item.id}}">
+          <view class="cat-card lift" hover-class="lift-hover">
+            <view class="cat-icon">{{index + 1}}</view>
+            <text class="cat-name">{{item.name}}</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 热门推荐：横向卡片 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-title">热门在听</text>
+      <text class="section-sub">大家都在追</text>
+    </view>
+    <scroll-view scroll-x class="hot-scroll">
+      <view class="hot-list">
+        <view class="hot-item stage-3d" wx:for="{{hotStories}}" wx:key="id" bindtap="goDetail" data-id="{{item.id}}">
+          <view class="hot-card lift" hover-class="lift-hover">
+            <view class="hot-cover cover" style="background:linear-gradient(135deg,{{item.coverFrom}},{{item.coverTo}})">
+              <text class="cover-label hot-label">{{item.title}}</text>
+            </view>
+            <view class="hot-title">{{item.title}}</view>
+            <view class="hot-meta muted">{{item.playText}} 次播放</view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 全部故事：双列网格 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-title">为你推荐</text>
+      <text class="section-sub">{{stories.length}} 个故事</text>
+    </view>
+    <view class="grid">
+      <view class="grid-item stage-3d" wx:for="{{stories}}" wx:key="id" bindtap="goDetail" data-id="{{item.id}}">
+        <view class="grid-card lift" hover-class="lift-hover">
+          <view class="grid-cover cover" style="background:linear-gradient(135deg,{{item.coverFrom}},{{item.coverTo}})">
+            <text class="cover-label grid-label">{{item.title}}</text>
+            <view class="grid-duration">{{item.durationText}}</view>
+          </view>
+          <view class="grid-body">
+            <view class="grid-title">{{item.title}}</view>
+            <view class="grid-desc muted">{{item.author}} · {{item.narrator}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="loading-tip muted" wx:if="{{loading}}">正在加载故事…</view>
+</view>

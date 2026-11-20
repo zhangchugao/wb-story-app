@@ -1,0 +1,45 @@
+<view class="page">
+  <!-- 用户卡片：3D 悬浮 -->
+  <view class="stage-3d">
+    <view class="profile-card lift">
+      <view class="avatar">{{avatarLetter}}</view>
+      <view class="profile-info">
+        <view class="nickname">{{userInfo.nickname || '未设置昵称'}}</view>
+        <view class="profile-desc muted">好故事，慢慢听</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 数据概览 -->
+  <view class="stats">
+    <view class="stat-item lift">
+      <view class="stat-num">{{favoritedCount}}</view>
+      <view class="stat-label muted">收藏</view>
+    </view>
+    <view class="stat-item lift">
+      <view class="stat-num">{{historyCount}}</view>
+      <view class="stat-label muted">在听</view>
+    </view>
+  </view>
+
+  <!-- 功能入口分组 -->
+  <view class="menu" wx:for="{{menuGroups}}" wx:for-item="group" wx:key="key">
+    <view class="menu-group lift">
+      <view
+        class="menu-row"
+        wx:for="{{group.items}}"
+        wx:for-item="item"
+        wx:key="key"
+        bindtap="handleMenuTap"
+        data-path="{{item.path}}"
+        hover-class="menu-row-hover"
+      >
+        <view class="menu-icon">{{item.icon}}</view>
+        <view class="menu-text">{{item.text}}</view>
+        <view class="menu-arrow">›</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer muted">听故事 · v1.0</view>
+</view>

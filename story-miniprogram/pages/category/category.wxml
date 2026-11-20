@@ -1,0 +1,45 @@
+<view class="cat-page">
+  <!-- 左侧分类导航 -->
+  <scroll-view scroll-y class="side">
+    <view class="side-title muted">分类</view>
+    <view
+      class="side-item {{activeId === item.id ? 'side-active' : ''}}"
+      wx:for="{{categories}}"
+      wx:key="id"
+      bindtap="switchCategory"
+      data-id="{{item.id}}"
+    >
+      <text class="side-dot" wx:if="{{activeId === item.id}}"></text>
+      <text>{{item.name}}</text>
+    </view>
+  </scroll-view>
+
+  <!-- 右侧故事列表 -->
+  <scroll-view scroll-y class="content">
+    <view class="content-head">
+      <view class="content-title">{{activeId === 1 ? '童话寓言' : activeId === 2 ? '睡前故事' : activeId === 3 ? '历史传奇' : activeId === 4 ? '科普百科' : '悬疑探案'}}</view>
+      <view class="content-sub muted">{{stories.length}} 个故事</view>
+    </view>
+
+    <view class="list">
+      <view class="row stage-3d" wx:for="{{stories}}" wx:key="id" bindtap="goDetail" data-id="{{item.id}}">
+        <view class="row-card lift" hover-class="lift-hover">
+          <view class="row-cover cover" style="background:linear-gradient(135deg,{{item.coverFrom}},{{item.coverTo}})">
+            <text class="cover-label row-label">{{item.title}}</text>
+          </view>
+          <view class="row-body">
+            <view class="row-title">{{item.title}}</view>
+            <view class="row-desc muted">{{item.description}}</view>
+            <view class="row-meta">
+              <text class="pill">{{item.tag}}</text>
+              <text class="muted row-time">{{item.durationText}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty muted" wx:if="{{!loading && stories.length === 0}}">这个分类还没有故事</view>
+    <view class="loading muted" wx:if="{{loading}}">加载中…</view>
+  </scroll-view>
+</view>

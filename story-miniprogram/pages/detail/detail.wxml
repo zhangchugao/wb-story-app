@@ -1,0 +1,66 @@
+<view class="page" wx:if="{{story}}">
+  <!-- 封面 3D 翻转展示 -->
+  <view class="stage-3d cover-stage">
+    <view class="big-cover cover" style="background:linear-gradient(135deg,{{story.coverFrom}},{{story.coverTo}})">
+      <text class="cover-label big-label">{{story.title}}</text>
+      <view class="cover-glow"></view>
+    </view>
+    <view class="cover-shadow"></view>
+  </view>
+
+  <!-- 标题信息 -->
+  <view class="title-row">
+    <view class="title-main">
+      <view class="story-title">{{story.title}}</view>
+      <view class="story-byline muted">{{story.author}} · 主播 {{story.narrator}}</view>
+    </view>
+    <view class="fav-btn {{favorited ? 'fav-on' : ''}}" bindtap="toggleFavorite">
+      {{favorited ? '♥' : '♡'}}
+    </view>
+  </view>
+
+  <view class="tags">
+    <text class="pill">{{story.tag}}</text>
+    <text class="pill soft">{{story.durationText}}</text>
+    <text class="pill soft">{{story.playText}} 次播放</text>
+  </view>
+
+  <!-- 简介 -->
+  <view class="intro lift">
+    <view class="intro-title">故事简介</view>
+    <view class="intro-text">{{story.description}}</view>
+  </view>
+
+  <!-- 分集列表 -->
+  <view class="episodes" wx:if="{{story.episodes.length > 0}}">
+    <view class="section-title ep-head">选集 · {{story.episodes.length}} 集</view>
+    <view class="ep-list">
+      <view
+        class="ep-row lift"
+        hover-class="lift-hover"
+        wx:for="{{story.episodes}}"
+        wx:key="id"
+        bindtap="playEpisode"
+        data-ep="{{item.episode_no}}"
+      >
+        <view class="ep-num">{{item.episode_no}}</view>
+        <view class="ep-info">
+          <view class="ep-title">{{item.title}}</view>
+          <view class="ep-dur muted">{{item.durationText}}</view>
+        </view>
+        <view class="ep-play">▶</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部播放条 -->
+  <view class="playbar" bindtap="play">
+    <view class="playbar-btn">▶</view>
+    <view class="playbar-text">
+      <view class="playbar-title">{{story.episodes.length > 0 ? '从第一集开始播放' : '开始播放'}}</view>
+      <view class="playbar-sub muted">预计 {{story.durationText}}</view>
+    </view>
+  </view>
+</view>
+
+<view class="loading muted" wx:else>加载中…</view>

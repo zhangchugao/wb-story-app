@@ -1,0 +1,46 @@
+.head { padding: 8rpx 8rpx 32rpx; }
+.list { display: flex; flex-direction: column; gap: 22rpx; }
+.row-card {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  padding: 18rpx;
+  border-radius: 26rpx;
+}
+.row-cover {
+  width: 150rpx;
+  height: 150rpx;
+  flex-shrink: 0;
+  transform: rotateY(-6deg);
+}
+.row-label { font-size: 32rpx; }
+.row-body { flex: 1; min-width: 0; }
+.row-title { font-size: 30rpx; font-weight: 700; }
+.row-desc { font-size: 22rpx; margin-top: 8rpx; }
+.progress-line { margin-top: 16rpx; }
+.progress-bar {
+  height: 8rpx;
+  background: #eef2f0;
+  border-radius: 999rpx;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #34d399, #10b981);
+  border-radius: 999rpx;
+}
+.progress-text { font-size: 20rpx; display: block; margin-top: 8rpx; }
+.row-play {
+  width: 68rpx;
+  height: 68rpx;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--mint-soft);
+  color: var(--mint-deep);
+  font-size: 26rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty, .loading { text-align: center; font-size: 26rpx; padding: 100rpx 0; }

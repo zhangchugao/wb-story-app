@@ -1,0 +1,114 @@
+:root {
+  --mint: #10b981;
+  --mint-deep: #059669;
+  --mint-soft: #ecfdf5;
+  --ink: #1f2a37;
+  --ink-soft: #6b7280;
+  --line: #e8eeeb;
+  --page-bg: #f5f9f7;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--page-bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+// Element Plus 主题覆写（按需注入的 CSS 会在运行时加载，用 !important 确保优先级）
+:root {
+  --el-color-primary: #10b981 !important;
+  --el-color-primary-light-3: #34d399 !important;
+  --el-color-primary-light-5: #6ee7b7 !important;
+  --el-color-primary-light-7: #a7f3d0 !important;
+  --el-color-primary-light-9: #ecfdf5 !important;
+  --el-color-primary-dark-2: #059669 !important;
+  --el-border-radius-base: 10px !important;
+  --el-border-radius-small: 8px !important;
+}
+
+.page-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(31, 42, 55, 0.04);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+  > div { min-width: 0; }
+  .title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+    white-space: nowrap;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 4px 0 0;
+    white-space: nowrap;
+  }
+}
+
+// 表格容器：窄屏时表格内部横向滚动，不影响整页布局
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+// 轻量淡入动画
+.fade-enter-active, .fade-leave-active { transition: opacity .2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+// ============ H5 / 移动端适配 ============
+@media (max-width: 768px) {
+  .page-card { padding: 16px; border-radius: 14px; }
+
+  .page-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    .title { font-size: 20px; }
+    .subtitle { white-space: normal; }
+  }
+
+  // 弹窗不超出屏幕
+  .el-dialog {
+    width: calc(100vw - 24px) !important;
+    margin: 12px auto !important;
+  }
+  .el-dialog__body { padding: 16px; }
+
+  // 分页精简：隐藏每页条数选择器
+  .el-pagination__sizes { display: none !important; }
+  .el-pagination { flex-wrap: wrap; justify-content: center; }
+
+  // 表单在窄屏更紧凑
+  .el-form-item { margin-bottom: 16px; }
+}
+
+@media (max-width: 480px) {
+  .page-header { flex-direction: column; }
+  .page-header > .el-button { width: 100%; }
+}
+
+// 触摸设备：去掉 hover 抬升动画的粘滞感
+@media (hover: none) {
+  .stat-card:hover, .hot-tag:hover { transform: none; }
+}

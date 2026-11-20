@@ -1,0 +1,65 @@
+<view class="player-page" wx:if="{{story}}">
+  <!-- 背景光晕 -->
+  <view class="bg-glow" style="background:radial-gradient(circle at 50% 30%, {{story.coverFrom}}, transparent 70%)"></view>
+
+  <!-- 3D 旋转唱片 -->
+  <view class="disc-stage">
+    <view class="disc {{playing ? 'disc-spin' : ''}}">
+      <view class="disc-label" style="background:linear-gradient(135deg,{{story.coverFrom}},{{story.coverTo}})">
+        <text>{{story.title}}</text>
+      </view>
+      <view class="disc-hole"></view>
+    </view>
+    <view class="tonearm {{playing ? 'tonearm-on' : ''}}"></view>
+  </view>
+
+  <!-- 故事信息 -->
+  <view class="track-info">
+    <view class="track-title">{{story.title}}</view>
+    <view class="track-artist muted">主播 · {{story.narrator}}</view>
+  </view>
+
+  <!-- 进度条 -->
+  <view class="progress-wrap">
+    <slider
+      class="progress"
+      min="0"
+      max="100"
+      value="{{duration ? (current / duration * 100) : 0}}"
+      activeColor="#10b981"
+      backgroundColor="#e5ebe7"
+      block-size="20"
+      block-color="#10b981"
+      bindchange="seek"
+    />
+    <view class="progress-time">
+      <text class="muted">{{currentText}}</text>
+      <text class="muted">{{durationText}}</text>
+    </view>
+  </view>
+
+  <!-- 播放控制 -->
+  <view class="controls">
+    <view class="ctrl-side" bindtap="cycleSpeed">
+      <view class="speed-badge">{{speeds[speedIndex]}}x</view>
+      <text class="ctrl-label muted">倍速</text>
+    </view>
+    <view class="ctrl-main" bindtap="skip" data-dir="-1">
+      <view class="skip-btn">◀◀</view>
+    </view>
+    <view class="play-main" bindtap="togglePlay">
+      <view class="play-circle">{{playing ? '❚❚' : '▶'}}</view>
+    </view>
+    <view class="ctrl-main" bindtap="skip" data-dir="1">
+      <view class="skip-btn">▶▶</view>
+    </view>
+    <view class="ctrl-side" bindtap="cycleSleep">
+      <view class="sleep-badge">{{sleepIndex === 0 ? '☾' : sleepText}}</view>
+      <text class="ctrl-label muted">定时</text>
+    </view>
+  </view>
+
+  <view class="tip muted">内测版 · 拖动进度条可跳转播放位置</view>
+</view>
+
+<view class="loading muted" wx:else>加载中…</view>

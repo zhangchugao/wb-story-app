@@ -1,0 +1,20 @@
+# WorkBuddy 会话元数据（非项目文件）
+.workbuddy/
+*.genie
+
+# 依赖与构建产物
+**/node_modules/
+**/dist/
+**/.vite/
+**/*.tsbuildinfo
+
+# 环境变量与本地数据
+**/.env
+**/data/
+**/storage/audio/*
+!**/storage/audio/.gitkeep
+
+# 日志与系统文件
+**/*.log
+.DS_Store
+Thumbs.db

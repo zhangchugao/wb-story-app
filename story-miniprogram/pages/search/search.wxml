@@ -1,0 +1,60 @@
+<view class="page">
+  <!-- 搜索框 -->
+  <view class="search-bar">
+    <text class="search-icon">⌕</text>
+    <input
+      class="search-input"
+      value="{{keyword}}"
+      placeholder="搜索故事、作者、主播"
+      placeholder-class="ph"
+      confirm-type="search"
+      bindinput="onInput"
+      bindconfirm="onConfirm"
+    />
+    <text class="clear-btn" wx:if="{{keyword}}" bindtap="clear">×</text>
+  </view>
+
+  <!-- 热搜（未搜索时） -->
+  <view class="hot-block" wx:if="{{!searched}}">
+    <view class="section-title">大家都在搜</view>
+    <view class="hot-tags">
+      <view
+        class="hot-tag lift"
+        hover-class="lift-hover"
+        wx:for="{{hotKeywords}}"
+        wx:key="*this"
+        bindtap="tapHot"
+        data-word="{{item}}"
+      >
+        <text class="hot-rank">{{index + 1}}</text>
+        <text>{{item}}</text>
+      </view>
+    </view>
+    <view class="hint muted">输入关键词，回车或点击热搜开始搜索</view>
+  </view>
+
+  <!-- 搜索结果 -->
+  <view class="result-block" wx:else>
+    <view class="result-head">
+      <text class="section-title">搜索结果</text>
+      <text class="muted result-count">{{loading ? '搜索中…' : results.length + ' 个故事'}}</text>
+    </view>
+
+    <view class="list">
+      <view class="row stage-3d" wx:for="{{results}}" wx:key="id" bindtap="goDetail" data-id="{{item.id}}">
+        <view class="row-card lift" hover-class="lift-hover">
+          <view class="row-cover cover" style="background:linear-gradient(135deg,{{item.coverFrom}},{{item.coverTo}})">
+            <text class="cover-label row-label">{{item.title}}</text>
+          </view>
+          <view class="row-body">
+            <view class="row-title">{{item.title}}</view>
+            <view class="row-desc muted">{{item.author}} · {{item.narrator}}</view>
+            <view class="row-meta muted">{{item.durationText}} · {{item.playText}} 次播放</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty muted" wx:if="{{!loading && results.length === 0}}">没有找到相关故事，换个词试试</view>
+  </view>
+</view>

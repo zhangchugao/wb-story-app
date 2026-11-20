@@ -1,0 +1,23 @@
+{
+  "name": "story-audio-backend",
+  "version": "1.0.0",
+  "description": "听故事小程序后端服务 - Node.js + Express + SQLite",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch src/server.js",
+    "init-db": "node --disable-warning=ExperimentalWarning src/db/init.js"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.5.0"
+  },
+  "license": "MIT"
+}
