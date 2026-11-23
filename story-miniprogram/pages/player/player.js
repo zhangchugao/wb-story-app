@@ -1,11 +1,15 @@
 'use strict';
 
 const api = require('../../utils/api');
+const MOCK = require('../../utils/mock');
 
 // 音频绝对地址：与 api.js 共用同一后端 HOST（真机调试时随 api.js 一起切换局域网 IP）
 function absUrl(pathOrUrl) {
   return pathOrUrl.indexOf('http') === 0 ? pathOrUrl : api.HOST + pathOrUrl;
 }
+
+// 定时循环：不定时 → 20 分钟 → 40 分钟 → 这集讲完就熄灯
+const SLEEP_MINS = [0, 20, 40, 'end'];
 
 Page({
   data: {
@@ -14,11 +18,10 @@ Page({
     current: 0,
     duration: 0,
     currentText: '0:00',
-    durationText: '0:00',
-    speedIndex: 1,
-    speeds: [0.75, 1, 1.25, 1.5, 2],
-    sleepText: '定时关闭',
-    sleepOptions: ['关闭', '10 分钟', '20 分钟', '30 分钟', '45 分钟'],
+    remainText: '--',
+    catName: '晚安盒',
+    dim: false,
+    sleepText: '不定时',
     sleepIndex: 0,
     bgmOn: false,
     bgmTracks: [
@@ -43,11 +46,15 @@ Page({
 
   async loadStory() {
     const detail = await api.getDetail(this.storyId);
+    if (detail && !detail.cover) detail.cover = MOCK.coverOf(detail.id);
     const duration = (detail && detail.duration) || 300;
+    const cat = MOCK.categories.find((c) => c.id === (detail && detail.category_id));
     this.setData({
       story: detail,
       duration,
-      durationText: api.formatTime ? api.formatTime(duration) : this.fmt(duration),
+      currentText: '0:00',
+      remainText: MOCK.formatTime(duration),
+      catName: cat ? cat.name : '晚安盒',
     });
     this.initAudio(detail);
   },
@@ -73,17 +80,17 @@ Page({
         ctx.src = absUrl(src);
         this._hasAudio = true;
       } else {
-        // 该故事没有任何音频（如未导入完成的英文故事）
         this._hasAudio = false;
         wx.showToast({ title: '这个故事暂时没有音频哦', icon: 'none' });
       }
       ctx.onTimeUpdate(() => {
         if (!ctx.duration || !isFinite(ctx.duration)) return;
+        const remain = Math.max(ctx.duration - ctx.currentTime, 0);
         this.setData({
           current: ctx.currentTime,
           duration: ctx.duration,
           currentText: this.fmt(ctx.currentTime),
-          durationText: this.fmt(ctx.duration),
+          remainText: MOCK.formatTime(Math.round(remain)),
         });
         // 每 10 秒上报一次进度
         if (Math.floor(ctx.currentTime) % 10 === 0 && Math.floor(ctx.currentTime) !== this._lastReport) {
@@ -94,6 +101,11 @@ Page({
       ctx.onEnded(() => {
         this.setData({ playing: false });
         this.syncBgm();
+        // 「这集讲完就熄灯」
+        if (this._sleepAtEnd && !this.data.dim) {
+          this.setData({ dim: true });
+          wx.showToast({ title: '这一集讲完了，灯熄了', icon: 'none' });
+        }
       });
       ctx.onError(() => {
         this.setData({ playing: false });
@@ -101,6 +113,66 @@ Page({
         wx.showToast({ title: '音频加载失败，请稍后重试', icon: 'none' });
       });
     } catch (e) { /* 预览环境无音频能力 */ }
+  },
+
+  reportProgress(pos) {
+    if (!this.storyId) return;
+    api.saveProgress(this.storyId, Math.floor(pos)).catch(() => {});
+  },
+
+  togglePlay() {
+    if (this._hasAudio === false) {
+      wx.showToast({ title: '这个故事暂时没有音频哦', icon: 'none' });
+      return;
+    }
+    const next = !this.data.playing;
+    this.setData({ playing: next });
+    if (this.audio) {
+      if (next) this.audio.play(); else this.audio.pause();
+    }
+    this.syncBgm();
+  },
+
+  seek(e) {
+    const pct = e.detail.value / 100;
+    const target = pct * this.data.duration;
+    this.setData({ current: target, currentText: this.fmt(target) });
+    if (this.audio && this.audio.seek) this.audio.seek(target);
+  },
+
+  skip(e) {
+    const dir = Number(e.currentTarget.dataset.dir);
+    let target = this.data.current + dir * 15;
+    target = Math.max(0, Math.min(target, this.data.duration));
+    this.setData({ current: target, currentText: this.fmt(target) });
+    if (this.audio && this.audio.seek) this.audio.seek(target);
+  },
+
+  // 定时循环：不定时 → 20 分钟 → 40 分钟 → 这集讲完就熄灯
+  cycleSleep() {
+    const next = (this.data.sleepIndex + 1) % SLEEP_MINS.length;
+    const texts = ['不定时', '20 分钟', '40 分钟', '讲完就熄灯'];
+    this._sleepAtEnd = SLEEP_MINS[next] === 'end';
+    this.setData({ sleepIndex: next, sleepText: texts[next] });
+    if (this._sleepTimer) { clearTimeout(this._sleepTimer); this._sleepTimer = null; }
+    const mins = SLEEP_MINS[next];
+    if (typeof mins === 'number' && mins > 0) {
+      this._sleepTimer = setTimeout(() => {
+        this.setData({ playing: false, dim: true });
+        if (this.audio) this.audio.pause();
+        if (this.bgm) this.bgm.pause();
+        wx.showToast({ title: '到点了，灯熄了', icon: 'none' });
+      }, mins * 60 * 1000);
+    }
+    if (next !== 0) {
+      wx.showToast({ title: mins === 'end' ? '这一集讲完就熄灯' : texts[next] + '后熄灯', icon: 'none' });
+    }
+  },
+
+  // 熄灯：整页暗场，光晕减弱，封面叠暗层
+  toggleDim() {
+    const next = !this.data.dim;
+    this.setData({ dim: next });
   },
 
   // ---------- 背景音乐 ----------
@@ -145,60 +217,6 @@ Page({
     wx.setStorageSync('bgmTrack', next);
     this._bgmLoadedKey = '';
     this.syncBgm();
-  },
-
-  reportProgress(pos) {
-    if (!this.storyId) return;
-    api.saveProgress(this.storyId, Math.floor(pos)).catch(() => {});
-  },
-
-  togglePlay() {
-    if (this._hasAudio === false) {
-      wx.showToast({ title: '这个故事暂时没有音频哦', icon: 'none' });
-      return;
-    }
-    const next = !this.data.playing;
-    this.setData({ playing: next });
-    if (this.audio) {
-      if (next) this.audio.play(); else this.audio.pause();
-    }
-    this.syncBgm();
-  },
-
-  seek(e) {
-    const pct = e.detail.value / 100;
-    const target = pct * this.data.duration;
-    this.setData({ current: target, currentText: this.fmt(target) });
-    if (this.audio && this.audio.seek) this.audio.seek(target);
-  },
-
-  skip(e) {
-    const dir = Number(e.currentTarget.dataset.dir);
-    let target = this.data.current + dir * 15;
-    target = Math.max(0, Math.min(target, this.data.duration));
-    this.setData({ current: target, currentText: this.fmt(target) });
-    if (this.audio && this.audio.seek) this.audio.seek(target);
-  },
-
-  cycleSpeed() {
-    const next = (this.data.speedIndex + 1) % this.data.speeds.length;
-    this.setData({ speedIndex: next });
-    if (this.audio && this.audio.playbackRate) this.audio.playbackRate = this.data.speeds[next];
-    wx.showToast({ title: this.data.speeds[next] + 'x', icon: 'none' });
-  },
-
-  cycleSleep() {
-    const next = (this.data.sleepIndex + 1) % this.data.sleepOptions.length;
-    this.setData({ sleepIndex: next, sleepText: this.data.sleepOptions[next] });
-    if (this._sleepTimer) { clearTimeout(this._sleepTimer); this._sleepTimer = null; }
-    const mins = [0, 10, 20, 30, 45][next];
-    if (mins > 0) {
-      this._sleepTimer = setTimeout(() => {
-        this.setData({ playing: false });
-        if (this.audio) this.audio.pause();
-        if (this.bgm) this.bgm.pause();
-      }, mins * 60 * 1000);
-    }
   },
 
   onUnload() {

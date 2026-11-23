@@ -1,173 +1,158 @@
+/* 播放页 · 月亮灯（签名屏） */
 .player-page {
   position: relative;
   min-height: 100vh;
-  padding: 60rpx 40rpx 80rpx;
+  padding: 40rpx 40rpx 60rpx;
+  background: linear-gradient(180deg, #0F1B33 0%, #1B2A4A 60%, #233758 100%);
+  transition: background 0.6s ease;
+}
+/* 熄灯暗场 */
+.player-page.dim {
+  background: linear-gradient(180deg, #0A1226 0%, #101B36 100%);
+}
+
+/* 标题区 */
+.p-head { text-align: center; margin-top: 30rpx; position: relative; z-index: 1; }
+.p-eyebrow { font-size: 24rpx; }
+.p-title { font-size: 48rpx; font-weight: 700; color: var(--fg); margin-top: 14rpx; }
+.dim .p-title { color: #B8C2DB; }
+.p-byline { font-size: 26rpx; margin-top: 12rpx; }
+
+/* 月亮灯 */
+.lamp-stage {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 70rpx 0 30rpx;
+  height: 560rpx;
+}
+.halo {
+  position: absolute;
+  width: 620rpx;
+  height: 620rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 201, 123, 0.26) 0%, rgba(245, 201, 123, 0.10) 55%, transparent 72%);
+  opacity: 1;
+  transition: opacity 0.6s ease;
+}
+.halo-breath { animation: breath 4s ease-in-out infinite; }
+.halo-dim { opacity: 0.28; }
+@keyframes breath {
+  0%, 100% { transform: scale(0.94); }
+  50% { transform: scale(1.04); }
+}
+.lamp-cover {
+  position: relative;
+  width: 400rpx;
+  height: 400rpx;
+  border-radius: 50%;
   overflow: hidden;
-}
-.bg-glow {
-  position: absolute;
-  top: -100rpx;
-  left: -100rpx;
-  right: -100rpx;
-  height: 800rpx;
-  opacity: 0.35;
-  filter: blur(40rpx);
-  z-index: 0;
-}
-
-.disc-stage {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  padding: 80rpx 0 40rpx;
+  border: 1rpx solid rgba(233, 237, 247, 0.14);
+  box-shadow: 0 30rpx 80rpx rgba(0, 0, 0, 0.45);
   z-index: 1;
-  perspective: 1000rpx;
 }
-.disc {
-  position: relative;
-  width: 460rpx;
-  height: 460rpx;
-  border-radius: 50%;
-  background: repeating-radial-gradient(circle, #2b2f33 0, #2b2f33 6rpx, #23272b 7rpx, #23272b 12rpx);
-  box-shadow: 0 30rpx 60rpx rgba(0, 0, 0, 0.35), inset 0 0 0 4rpx rgba(255, 255, 255, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: rotateX(16deg);
-}
-.disc-spin { animation: spin 8s linear infinite; }
-@keyframes spin { from { transform: rotateX(16deg) rotate(0); } to { transform: rotateX(16deg) rotate(360deg); } }
-.disc-label {
-  width: 240rpx;
-  height: 240rpx;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 30rpx;
-  color: #fff;
-  font-size: 34rpx;
-  font-weight: 700;
-  box-shadow: inset 0 0 30rpx rgba(0, 0, 0, 0.15);
-}
-.disc-hole {
+.lamp-img { width: 100%; height: 100%; display: block; }
+.lamp-shade {
   position: absolute;
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  background: #f7fbf9;
-  box-shadow: inset 0 2rpx 8rpx rgba(0, 0, 0, 0.3);
+  left: 0; top: 0; right: 0; bottom: 0;
+  background: rgba(10, 16, 32, 0.62);
 }
-.tonearm {
-  position: absolute;
-  top: 20rpx;
-  right: 40rpx;
-  width: 14rpx;
-  height: 220rpx;
-  background: linear-gradient(#cbd5d1, #9aa5a1);
-  border-radius: 999rpx;
-  transform-origin: top center;
-  transform: rotate(28deg);
-  transition: transform 0.5s ease;
-  z-index: 3;
-}
-.tonearm::after {
-  content: '';
-  position: absolute;
-  bottom: -16rpx;
-  left: -10rpx;
-  width: 34rpx;
-  height: 34rpx;
-  border-radius: 50%;
-  background: #b9c2be;
-}
-.tonearm-on { transform: rotate(8deg); }
 
-.track-info { text-align: center; margin-top: 20rpx; z-index: 1; position: relative; }
-.track-title { font-size: 44rpx; font-weight: 800; }
-.track-artist { font-size: 24rpx; margin-top: 10rpx; }
-
-.progress-wrap { margin-top: 56rpx; z-index: 1; position: relative; }
-.progress { margin: 0; }
+/* 进度 */
+.progress-wrap { margin-top: 20rpx; position: relative; z-index: 1; }
+.progress { margin: 0; transform: scale(0.98); }
 .progress-time {
   display: flex;
   justify-content: space-between;
-  font-size: 22rpx;
-  margin-top: 8rpx;
-  padding: 0 8rpx;
+  margin-top: 6rpx;
+  padding: 0 14rpx;
 }
+.p-time { font-size: 24rpx; color: var(--muted); }
 
+/* 控制 */
 .controls {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-top: 50rpx;
-  z-index: 1;
+  margin-top: 46rpx;
+  padding: 0 10rpx;
   position: relative;
+  z-index: 1;
 }
-.ctrl-side { width: 100rpx; text-align: center; }
-.speed-badge, .sleep-badge {
+.ctrl-side, .ctrl-main {
+  width: 120rpx;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ctrl-icon {
   width: 88rpx;
   height: 88rpx;
-  border-radius: 26rpx;
-  background: #fff;
-  color: var(--mint-deep);
-  font-size: 26rpx;
-  font-weight: 700;
+  border-radius: 50%;
+  font-size: 36rpx;
+  color: var(--moon);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1rpx solid rgba(233, 237, 247, 0.10);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 20rpx rgba(31, 42, 55, 0.08);
 }
-.sleep-badge { font-size: 22rpx; }
-.ctrl-label { font-size: 20rpx; display: block; margin-top: 10rpx; }
-.ctrl-main .skip-btn {
+.ctrl-on {
+  color: var(--lamp);
+  background: rgba(245, 201, 123, 0.14);
+  border-color: rgba(245, 201, 123, 0.4);
+  box-shadow: 0 0 28rpx rgba(245, 201, 123, 0.25);
+}
+.skip-btn {
   width: 88rpx;
   height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--mint-deep);
+  color: var(--muted);
   font-size: 30rpx;
 }
-.play-main .play-circle {
-  width: 130rpx;
-  height: 130rpx;
+.ctrl-label { font-size: 24rpx; margin-top: 12rpx; }
+.play-main { width: 120rpx; }
+.play-circle {
+  width: 140rpx;
+  height: 140rpx;
+  margin-top: -14rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #34d399, #10b981);
-  color: #fff;
-  font-size: 46rpx;
+  background: linear-gradient(135deg, var(--lamp), var(--lamp-deep));
+  color: #1A2438;
+  font-size: 44rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 16rpx 36rpx rgba(16, 185, 129, 0.45);
+  box-shadow: 0 0 60rpx rgba(245, 201, 123, 0.45);
 }
-.tip { text-align: center; font-size: 20rpx; margin-top: 60rpx; z-index: 1; position: relative; }
-.loading { text-align: center; padding: 200rpx; font-size: 26rpx; }
+.dim .play-circle {
+  background: linear-gradient(135deg, #8A744E, #6B5A3C);
+  box-shadow: 0 0 30rpx rgba(245, 201, 123, 0.15);
+}
 
 /* 背景音乐开关 */
 .bgm-bar {
   display: flex;
   align-items: center;
-  margin: 40rpx 60rpx 0;
+  margin: 50rpx 20rpx 0;
   padding: 20rpx 28rpx;
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 24rpx;
-  box-shadow: 0 8rpx 24rpx rgba(16, 185, 129, 0.12);
-  z-index: 1;
   position: relative;
+  z-index: 1;
 }
 .bgm-switch {
   width: 76rpx;
   height: 44rpx;
   border-radius: 22rpx;
-  background: #d7ddd9;
+  background: rgba(233, 237, 247, 0.15);
   position: relative;
   transition: background 0.2s;
   flex-shrink: 0;
 }
-.bgm-switch-on { background: #10b981; }
+.bgm-switch-on { background: var(--lamp); }
 .bgm-knob {
   width: 36rpx;
   height: 36rpx;
@@ -177,15 +162,24 @@
   top: 4rpx;
   left: 4rpx;
   transition: left 0.2s;
-  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
 }
 .bgm-knob-on { left: 36rpx; }
-.bgm-text {
-  flex: 1;
-  margin-left: 24rpx;
-  display: flex;
-  flex-direction: column;
+.bgm-text { flex: 1; margin-left: 24rpx; display: flex; flex-direction: column; }
+.bgm-title { font-size: 26rpx; color: var(--fg); font-weight: 500; }
+.bgm-track { font-size: 24rpx; margin-top: 4rpx; }
+.bgm-cycle { font-size: 24rpx; padding: 8rpx 0 8rpx 20rpx; flex-shrink: 0; }
+
+/* 底部提示 */
+.tip-pill {
+  margin: 44rpx auto 0;
+  width: fit-content;
+  padding: 14rpx 40rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(233, 237, 247, 0.10);
+  position: relative;
+  z-index: 1;
 }
-.bgm-title { font-size: 26rpx; color: #1f2937; font-weight: 500; }
-.bgm-track { font-size: 20rpx; margin-top: 4rpx; }
-.bgm-cycle { font-size: 22rpx; color: #10b981; padding: 8rpx 0 8rpx 20rpx; flex-shrink: 0; }
+.dim .tip-pill { color: #7E8AA8; }
+.loading { text-align: center; padding: 200rpx 0; font-size: 26rpx; }

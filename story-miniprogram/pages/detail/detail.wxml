@@ -1,49 +1,42 @@
 <view class="page" wx:if="{{story}}">
-  <!-- 封面 3D 翻转展示 -->
-  <view class="stage-3d cover-stage">
-    <view class="big-cover cover" style="background:linear-gradient(135deg,{{story.coverFrom}},{{story.coverTo}})">
-      <text class="cover-label big-label">{{story.title}}</text>
-      <view class="cover-glow"></view>
+  <!-- 封面大图 -->
+  <view class="cover-card night-card" bindtap="play">
+    <image class="cover-img" src="{{story.cover}}" mode="aspectFill" />
+    <view class="cover-shade"></view>
+    <view class="fav-btn {{favorited ? 'fav-on' : ''}}" catchtap="toggleFavorite">{{favorited ? '♥' : '♡'}}</view>
+    <view class="cover-overlay">
+      <view class="cover-title">{{story.title}}</view>
+      <view class="cover-byline">{{story.narrator}} · {{story.durationText}}</view>
     </view>
-    <view class="cover-shadow"></view>
+    <view class="cover-play" catchtap="play">▶</view>
   </view>
 
-  <!-- 标题信息 -->
-  <view class="title-row">
-    <view class="title-main">
-      <view class="story-title">{{story.title}}</view>
-      <view class="story-byline muted">{{story.author}} · 主播 {{story.narrator}}</view>
-    </view>
-    <view class="fav-btn {{favorited ? 'fav-on' : ''}}" bindtap="toggleFavorite">
-      {{favorited ? '♥' : '♡'}}
-    </view>
-  </view>
-
+  <!-- 标签 -->
   <view class="tags">
-    <text class="pill">{{story.tag}}</text>
-    <text class="pill soft">{{story.durationText}}</text>
-    <text class="pill soft">{{story.playText}} 次播放</text>
+    <text class="pill-lamp">{{story.tag}}</text>
+    <text class="tag-soft">{{story.durationText}}</text>
+    <text class="tag-soft">{{story.playText}} 人听过</text>
   </view>
 
   <!-- 简介 -->
-  <view class="intro lift">
-    <view class="intro-title">故事简介</view>
-    <view class="intro-text">{{story.description}}</view>
+  <view class="intro night-card">
+    <view class="intro-title">关于这个故事</view>
+    <view class="intro-text muted">{{story.description}}</view>
   </view>
 
-  <!-- 分集列表 -->
+  <!-- 章节 -->
   <view class="episodes" wx:if="{{story.episodes.length > 0}}">
-    <view class="section-title ep-head">选集 · {{story.episodes.length}} 集</view>
+    <view class="section-title ep-head">章节 · {{story.episodes.length}} 集</view>
     <view class="ep-list">
       <view
-        class="ep-row lift"
-        hover-class="lift-hover"
+        class="ep-row night-card"
         wx:for="{{story.episodes}}"
         wx:key="id"
+        hover-class="row-hover"
         bindtap="playEpisode"
         data-ep="{{item.episode_no}}"
       >
-        <view class="ep-num">{{item.episode_no}}</view>
+        <view class="ep-num muted">{{item.episode_no}}</view>
         <view class="ep-info">
           <view class="ep-title">{{item.title}}</view>
           <view class="ep-dur muted">{{item.durationText}}</view>
@@ -57,10 +50,10 @@
   <view class="playbar" bindtap="play">
     <view class="playbar-btn">▶</view>
     <view class="playbar-text">
-      <view class="playbar-title">{{story.episodes.length > 0 ? '从第一集开始播放' : '开始播放'}}</view>
-      <view class="playbar-sub muted">预计 {{story.durationText}}</view>
+      <view class="playbar-title">{{story.episodes.length > 0 ? '从第一章开始听' : '今晚就听这个'}}</view>
+      <view class="playbar-sub muted">大约 {{story.durationText}}</view>
     </view>
   </view>
 </view>
 
-<view class="loading muted" wx:else>加载中…</view>
+<view class="loading muted" wx:else>正在翻开这一页…</view>

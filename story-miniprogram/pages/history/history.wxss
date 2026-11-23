@@ -1,46 +1,49 @@
-.head { padding: 8rpx 8rpx 32rpx; }
-.list { display: flex; flex-direction: column; gap: 22rpx; }
-.row-card {
+/* 收藏与历史 · 听过的晚上 */
+.page { padding: 30rpx 40rpx 80rpx; }
+
+.head {
   display: flex;
-  align-items: center;
-  gap: 22rpx;
-  padding: 18rpx;
-  border-radius: 26rpx;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10rpx 0 32rpx;
 }
-.row-cover {
-  width: 150rpx;
-  height: 150rpx;
-  flex-shrink: 0;
-  transform: rotateY(-6deg);
-}
-.row-label { font-size: 32rpx; }
-.row-body { flex: 1; min-width: 0; }
-.row-title { font-size: 30rpx; font-weight: 700; }
-.row-desc { font-size: 22rpx; margin-top: 8rpx; }
-.progress-line { margin-top: 16rpx; }
-.progress-bar {
-  height: 8rpx;
-  background: #eef2f0;
+
+.day-group { margin-bottom: 44rpx; }
+.day-label { font-size: 26rpx; margin-bottom: 18rpx; }
+
+.list { display: flex; flex-direction: column; gap: 20rpx; }
+.row { display: flex; align-items: center; padding: 20rpx; }
+.row-hover { opacity: 0.85; }
+.row-done { opacity: 0.55; }
+.row-thumb { width: 96rpx; height: 96rpx; border-radius: 24rpx; flex-shrink: 0; }
+.thumb-done { filter: grayscale(0.7) brightness(0.75); }
+.row-body { flex: 1; margin-left: 24rpx; min-width: 0; }
+.row-title { font-size: 30rpx; font-weight: 600; color: var(--fg); }
+.title-done { color: var(--muted); }
+.row-meta { font-size: 24rpx; margin-top: 6rpx; }
+.mini-progress {
+  height: 6rpx;
   border-radius: 999rpx;
+  background: rgba(233, 237, 247, 0.12);
+  margin-top: 14rpx;
   overflow: hidden;
 }
-.progress-fill {
+.mini-fill {
   height: 100%;
-  background: linear-gradient(90deg, #34d399, #10b981);
   border-radius: 999rpx;
+  background: linear-gradient(90deg, var(--lamp-deep), var(--lamp));
 }
-.progress-text { font-size: 20rpx; display: block; margin-top: 8rpx; }
 .row-play {
-  width: 68rpx;
-  height: 68rpx;
-  flex-shrink: 0;
+  width: 72rpx;
+  height: 72rpx;
   border-radius: 50%;
-  background: var(--mint-soft);
-  color: var(--mint-deep);
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--lamp), var(--lamp-deep));
+  color: #1A2438;
   font-size: 26rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0 24rpx rgba(245, 201, 123, 0.3);
 }
-
-.empty, .loading { text-align: center; font-size: 26rpx; padding: 100rpx 0; }
+.empty, .loading { text-align: center; font-size: 26rpx; padding: 60rpx 0; }

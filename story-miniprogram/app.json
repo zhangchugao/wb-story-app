@@ -10,17 +10,17 @@
   ],
   "window": {
     "navigationBarTitleText": "听故事",
-    "navigationBarBackgroundColor": "#F7FBF9",
-    "navigationBarTextStyle": "black",
-    "backgroundColor": "#F7FBF9",
+    "navigationBarBackgroundColor": "#0F1B33",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#0F1B33",
     "backgroundTextStyle": "light",
     "enablePullDownRefresh": false
   },
   "tabBar": {
-    "color": "#9CA3AF",
-    "selectedColor": "#10B981",
-    "backgroundColor": "#FFFFFF",
-    "borderStyle": "white",
+    "color": "#93A0BF",
+    "selectedColor": "#F5C97B",
+    "backgroundColor": "#121D36",
+    "borderStyle": "black",
     "list": [
       { "pagePath": "pages/index/index", "text": "首页", "iconPath": "assets/tabbar/home.png", "selectedIconPath": "assets/tabbar/home-active.png" },
       { "pagePath": "pages/category/category", "text": "分类", "iconPath": "assets/tabbar/category.png", "selectedIconPath": "assets/tabbar/category-active.png" },

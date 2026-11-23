@@ -1,113 +1,52 @@
-/* 全局主题：薄荷绿 + 云白 + 柔和阴影，简洁清新 */
+/* 全局主题：「今夜的灯」深夜蓝夜空 + 暖黄唯一光源 */
 page {
-  --mint: #10b981;
-  --mint-deep: #059669;
-  --mint-soft: #e7f7f0;
-  --ink: #1f2a37;
-  --ink-soft: #6b7280;
-  --line: #eef2f0;
-  --card: #ffffff;
-  background: #f7fbf9;
-  color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+  --night1: #0F1B33;
+  --night2: #1B2A4A;
+  --night3: #24365C;
+  --lamp: #F5C97B;
+  --lamp-deep: #E8A94F;
+  --moon: #F7EAD3;
+  --fg: #E9EDF7;
+  --muted: #93A0BF;
+  --faint: #5A6787;
+  --card: rgba(255, 255, 255, 0.06);
+  --card-line: rgba(233, 237, 247, 0.10);
+  background: #0F1B33;
+  color: var(--fg);
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 view, text { box-sizing: border-box; }
 
-/* 通用容器 */
+/* 通用页面：深夜蓝渐变（设计基准 375px，1px = 2rpx） */
 .page {
   min-height: 100vh;
-  padding: 28rpx 32rpx 60rpx;
+  padding: 30rpx 40rpx 80rpx;
+  background: linear-gradient(180deg, #0F1B33 0%, #1B2A4A 60%, #233758 100%);
 }
 
-/* 3D 舞台：给子元素建立透视空间 */
-.stage-3d {
-  perspective: 1200rpx;
+/* 夜色透明卡：统一容器（18px 圆角 = 36rpx） */
+.night-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1rpx solid rgba(233, 237, 247, 0.10);
+  border-radius: 36rpx;
 }
 
-/* 悬浮卡片：轻按上浮，配合多层柔和阴影营造立体感 */
-.lift {
-  background: var(--card);
-  border-radius: 28rpx;
-  box-shadow: 0 10rpx 30rpx rgba(31, 42, 55, 0.06), 0 2rpx 8rpx rgba(16, 185, 129, 0.05);
-  transform: translateZ(0);
-  transition: transform 0.28s cubic-bezier(.2, .8, .3, 1), box-shadow 0.28s ease;
-}
-.lift-hover {
-  transform: translateY(-10rpx) scale(1.015);
-  box-shadow: 0 26rpx 56rpx rgba(31, 42, 55, 0.12), 0 8rpx 20rpx rgba(16, 185, 129, 0.12);
-}
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+.lamp { color: var(--lamp); }
 
-/* 封面：渐变底 + 内高光，配合 3D 轻微倾斜 */
-.cover {
-  position: relative;
-  border-radius: 22rpx;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.cover::after {
-  content: '';
-  position: absolute;
-  top: -40%;
-  left: -30%;
-  width: 90%;
-  height: 90%;
-  background: rgba(255, 255, 255, 0.28);
-  border-radius: 50%;
-  filter: blur(6rpx);
-}
-.cover-label {
-  position: relative;
-  z-index: 2;
-  font-size: 44rpx;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
-  letter-spacing: 4rpx;
-  text-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.12);
-}
+/* 区块标题 */
+.section-title { font-size: 34rpx; font-weight: 600; color: var(--fg); }
+.section-link { font-size: 24rpx; color: var(--muted); }
 
-/* 标题排版 */
-.eyebrow {
-  font-size: 22rpx;
-  letter-spacing: 3rpx;
-  color: var(--mint);
-  font-weight: 600;
-}
-.section-title {
-  font-size: 34rpx;
-  font-weight: 700;
-  color: var(--ink);
-}
-.section-sub {
+/* 暖黄小胶囊（仅用于关键词/选中态，全站唯一暖色之一） */
+.pill-lamp {
+  display: inline-block;
+  padding: 6rpx 20rpx;
+  border-radius: 999rpx;
   font-size: 24rpx;
-  color: var(--ink-soft);
+  color: var(--lamp);
+  background: rgba(245, 201, 123, 0.14);
+  border: 1rpx solid rgba(245, 201, 123, 0.25);
 }
-.muted { color: var(--ink-soft); }
-
-/* 胶囊标签 */
-.pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 8rpx 20rpx;
-  border-radius: 999rpx;
-  background: var(--mint-soft);
-  color: var(--mint-deep);
-  font-size: 22rpx;
-}
-
-/* 主按钮 */
-.btn-primary {
-  background: linear-gradient(135deg, #34d399, #10b981);
-  color: #fff;
-  border-radius: 999rpx;
-  font-size: 30rpx;
-  font-weight: 600;
-  padding: 20rpx 0;
-  text-align: center;
-  box-shadow: 0 12rpx 26rpx rgba(16, 185, 129, 0.28);
-}
-.btn-primary::after { border: none; }
-
-button { border-radius: 16rpx; }

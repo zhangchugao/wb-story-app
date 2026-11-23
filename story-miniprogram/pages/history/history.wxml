@@ -1,30 +1,51 @@
 <view class="page">
   <view class="head">
     <view class="section-title">{{title}}</view>
-    <view class="section-sub muted">{{list.length}} 个故事</view>
+    <view class="section-link muted" wx:if="{{type === 'history'}}" bindtap="toggleOnlyUnfinished">{{onlyUnfinished ? '看看全部' : '只看没听完的'}}</view>
   </view>
 
-  <view class="list">
-    <view class="row stage-3d" wx:for="{{list}}" wx:key="id">
-      <view class="row-card lift" hover-class="lift-hover" bindtap="goDetail" data-id="{{item.id}}">
-        <view class="row-cover cover" style="background:linear-gradient(135deg,{{item.coverFrom}},{{item.coverTo}})">
-          <text class="cover-label row-label">{{item.title}}</text>
-        </view>
+  <!-- 收藏：普通列表 -->
+  <block wx:if="{{type === 'favorites'}}">
+    <view class="list">
+      <view class="row night-card" wx:for="{{list}}" wx:key="id" hover-class="row-hover" bindtap="goDetail" data-id="{{item.id}}">
+        <image class="row-thumb" src="{{item.cover}}" mode="aspectFill" />
         <view class="row-body">
           <view class="row-title">{{item.title}}</view>
-          <view class="row-desc muted">{{item.author}} · {{item.durationText}}</view>
-          <view class="progress-line" wx:if="{{type === 'history' && item.position > 0}}">
-            <view class="progress-bar">
-              <view class="progress-fill" style="width:{{item.position / item.durationRaw * 100}}%"></view>
-            </view>
-            <text class="progress-text muted">已听 {{item.positionText}}</text>
-          </view>
+          <view class="row-meta muted">{{item.narrator}} · {{item.durationText}}</view>
         </view>
         <view class="row-play" catchtap="goPlay" data-id="{{item.id}}">▶</view>
       </view>
     </view>
-  </view>
+  </block>
 
-  <view class="empty muted" wx:if="{{!loading && list.length === 0}}">这里还空空的，去挑个故事吧</view>
+  <!-- 历史：按日期分组 -->
+  <block wx:else>
+    <view class="day-group" wx:for="{{groups}}" wx:for-item="group" wx:key="day">
+      <view class="day-label muted">{{group.day}}</view>
+      <view class="list">
+        <view
+          class="row night-card {{item.finished ? 'row-done' : ''}}"
+          wx:for="{{group.items}}"
+          wx:key="id"
+          hover-class="row-hover"
+          bindtap="goDetail"
+          data-id="{{item.id}}"
+        >
+          <image class="row-thumb {{item.finished ? 'thumb-done' : ''}}" src="{{item.cover}}" mode="aspectFill" />
+          <view class="row-body">
+            <view class="row-title {{item.finished ? 'title-done' : ''}}">{{item.title}}</view>
+            <view class="row-meta muted" wx:if="{{!item.finished}}">听到 {{item.positionText}} · 还剩 {{item.remainText}}</view>
+            <view class="row-meta faint" wx:else>已经讲完这一夜</view>
+            <view class="mini-progress" wx:if="{{!item.finished}}">
+              <view class="mini-fill" style="width:{{item.percent}}%"></view>
+            </view>
+          </view>
+          <view class="row-play" wx:if="{{!item.finished}}" catchtap="goPlay" data-id="{{item.id}}">▶</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <view class="empty muted" wx:if="{{!loading && list.length === 0}}">这里还空空的，今晚挑一个吧</view>
   <view class="loading muted" wx:if="{{loading}}">加载中…</view>
 </view>

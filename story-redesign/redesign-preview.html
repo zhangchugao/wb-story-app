@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>听故事 · 改版预览（对照 screens/）</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0E1830; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; padding: 30px; display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; }
+  h1 { width: 100%; color: #E9EDF7; font-size: 22px; text-align: center; margin-bottom: 6px; }
+  .frame { width: 375px; height: 750px; border-radius: 40px; overflow: hidden; position: relative; border: 6px solid #0b0b0c; background: linear-gradient(180deg,#0F1B33 0%,#1B2A4A 60%,#233758 100%); color: #E9EDF7; flex-shrink: 0; }
+  .frame.dim { background: linear-gradient(180deg,#0A1226 0%,#101B36 100%); }
+  .tag { position: absolute; top: -22px; left: 8px; color: #93A0BF; font-size: 12px; }
+  .statusbar { position: absolute; top: 0; left: 0; right: 0; height: 40px; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; font-size: 13px; font-weight: 600; color: #E9EDF7; z-index: 5; }
+  .muted { color: #93A0BF; } .faint { color: #5A6787; } .lamp { color: #F5C97B; }
+  .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(233,237,247,0.10); border-radius: 18px; }
+  .page { padding: 52px 20px 20px; height: 100%; }
+  .head-row { display: flex; justify-content: space-between; font-size: 12px; }
+  .head-lamp { color: #F5C97B; font-size: 12px; }
+  .ptitle { font-size: 26px; font-weight: 700; line-height: 1.4; margin: 10px 0 18px; }
+  .hero { overflow: hidden; border-radius: 20px; position: relative; height: 210px; }
+  .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .shade { position: absolute; left: 0; right: 0; bottom: 0; height: 65%; background: linear-gradient(180deg, rgba(10,16,32,0) 0%, rgba(10,16,32,0.78) 78%); }
+  .badge { position: absolute; top: 11px; left: 11px; padding: 4px 11px; border-radius: 99px; font-size: 11px; color: #F7EAD3; background: rgba(10,16,32,0.55); border: 1px solid rgba(233,237,247,0.18); }
+  .hov { position: absolute; left: 15px; right: 15px; bottom: 13px; }
+  .htitle { font-size: 21px; font-weight: 700; color: #fff; }
+  .hmeta { font-size: 12px; color: rgba(233,237,247,0.78); margin-top: 4px; }
+  .hprog { display: flex; align-items: center; margin-top: 10px; }
+  .hbar { flex: 1; height: 4px; border-radius: 99px; background: rgba(233,237,247,0.18); }
+  .hfill { height: 100%; width: 42%; border-radius: 99px; background: linear-gradient(90deg,#E8A94F,#F5C97B); }
+  .hplay { width: 42px; height: 42px; margin-left: 12px; border-radius: 50%; background: linear-gradient(135deg,#F5C97B,#E8A94F); color: #1A2438; display: flex; align-items: center; justify-content: center; font-size: 15px; box-shadow: 0 0 18px rgba(245,201,123,0.35); }
+  .sect { margin-top: 24px; }
+  .shead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .stitle { font-size: 17px; font-weight: 600; }
+  .slink { font-size: 12px; color: #93A0BF; }
+  .cats { display: flex; justify-content: space-between; }
+  .cat { width: 79px; padding: 13px 0 11px; display: flex; flex-direction: column; align-items: center; }
+  .cat .ico { font-size: 18px; color: #F7EAD3; opacity: .85; }
+  .cat .nm { font-size: 13px; margin-top: 6px; }
+  .rail { display: flex; gap: 12px; overflow: hidden; }
+  .rcard { width: 150px; flex-shrink: 0; }
+  .rcard img { width: 150px; height: 150px; object-fit: cover; border-radius: 16px; border: 1px solid rgba(233,237,247,0.10); }
+  .rt { font-size: 15px; font-weight: 600; margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rm { font-size: 12px; color: #93A0BF; margin-top: 2px; }
+  .foot { text-align: center; font-size: 12px; color: #93A0BF; margin-top: 28px; }
+  /* 分类 */
+  .crow { display: flex; align-items: center; padding: 10px; margin-bottom: 10px; }
+  .crow img { width: 64px; height: 64px; border-radius: 14px; object-fit: cover; }
+  .cbody { flex: 1; margin-left: 13px; }
+  .cnm { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .pill-lamp { padding: 3px 10px; border-radius: 99px; font-size: 11px; color: #F5C97B; background: rgba(245,201,123,0.14); border: 1px solid rgba(245,201,123,0.25); }
+  .cdesc { font-size: 12px; color: #93A0BF; margin-top: 4px; }
+  .cside { font-size: 12px; color: #93A0BF; }
+  .srow { display: flex; align-items: center; padding: 10px; margin-bottom: 10px; }
+  .srow img { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; }
+  .sbody { flex: 1; margin-left: 12px; }
+  .st { font-size: 15px; font-weight: 600; }
+  .sm { font-size: 12px; color: #93A0BF; margin-top: 3px; }
+  .splay { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#F5C97B,#E8A94F); color: #1A2438; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  /* 搜索 */
+  .sbar { display: flex; align-items: center; height: 46px; padding: 0 15px; border-radius: 99px; font-size: 15px; }
+  .ehero { text-align: center; margin-top: 30px; }
+  .ehero img { width: 230px; height: 170px; object-fit: cover; border-radius: 18px; }
+  .et { font-size: 18px; font-weight: 600; margin-top: 18px; }
+  .es { font-size: 13px; color: #93A0BF; margin-top: 7px; }
+  .ebtn { display: inline-block; margin-top: 18px; padding: 10px 26px; border-radius: 99px; font-size: 14px; color: #1A2438; background: linear-gradient(135deg,#F5C97B,#E8A94F); }
+  .tags { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 13px; }
+  .tagc { padding: 7px 16px; border-radius: 99px; font-size: 13px; background: rgba(255,255,255,0.06); border: 1px solid rgba(233,237,247,0.10); }
+  /* 我的 */
+  .prof { display: flex; align-items: center; padding: 18px 16px; }
+  .ava { width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg,#24365C,#1B2A4A); border: 2px solid rgba(245,201,123,0.4); color: #F5C97B; font-size: 22px; display: flex; align-items: center; justify-content: center; }
+  .nick { font-size: 18px; font-weight: 700; }
+  .psub { font-size: 13px; color: #93A0BF; margin-top: 5px; }
+  .stats { display: flex; gap: 10px; margin-top: 12px; }
+  .stat { flex: 1; padding: 15px; }
+  .snum { font-size: 22px; font-weight: 700; }
+  .slabel { font-size: 12px; color: #93A0BF; margin-top: 4px; }
+  .remind { display: flex; margin-top: 12px; padding: 15px; border-radius: 18px; background: linear-gradient(135deg, rgba(245,201,123,0.16), rgba(232,169,79,0.08)); border: 1px solid rgba(245,201,123,0.25); }
+  .remind .moon { font-size: 20px; color: #F5C97B; }
+  .rbody { margin-left: 11px; }
+  .rt1 { font-size: 15px; font-weight: 600; color: #F7EAD3; }
+  .rt2 { font-size: 12px; color: #93A0BF; line-height: 1.6; margin-top: 5px; }
+  .menu { margin-top: 16px; }
+  .mrow { display: flex; align-items: center; padding: 15px 16px; border-bottom: 1px solid rgba(233,237,247,0.08); font-size: 15px; }
+  .mrow:last-child { border: none; }
+  .mico { width: 28px; color: #93A0BF; }
+  .mtx { flex: 1; }
+  /* 详情 */
+  .dcov { position: relative; height: 230px; border-radius: 20px; overflow: hidden; }
+  .dcov img { width: 100%; height: 100%; object-fit: cover; }
+  .dov { position: absolute; left: 17px; bottom: 17px; }
+  .dt { font-size: 23px; font-weight: 700; color: #fff; }
+  .db { font-size: 13px; color: rgba(233,237,247,0.78); margin-top: 5px; }
+  .dplay { position: absolute; right: 15px; bottom: 15px; width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg,#F5C97B,#E8A94F); color: #1A2438; display: flex; align-items: center; justify-content: center; font-size: 17px; box-shadow: 0 0 20px rgba(245,201,123,0.4); }
+  .dtags { display: flex; gap: 8px; margin-top: 15px; }
+  .tsoft { padding: 3px 10px; border-radius: 99px; font-size: 12px; color: #93A0BF; background: rgba(255,255,255,0.06); border: 1px solid rgba(233,237,247,0.10); }
+  .intro { margin-top: 16px; padding: 15px; }
+  .it { font-size: 15px; font-weight: 600; }
+  .ip { font-size: 14px; color: #93A0BF; line-height: 1.7; margin-top: 8px; }
+  .ep { display: flex; align-items: center; padding: 12px 14px; margin-bottom: 10px; }
+  .epnum { font-size: 14px; color: #93A0BF; width: 22px; }
+  .ept { font-size: 15px; font-weight: 600; }
+  .epd { font-size: 12px; color: #93A0BF; margin-top: 3px; }
+  .epplay { width: 32px; height: 32px; border-radius: 50%; background: rgba(245,201,123,0.14); border: 1px solid rgba(245,201,123,0.3); color: #F5C97B; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  /* 历史 */
+  .day { font-size: 13px; color: #93A0BF; margin: 14px 0 9px; }
+  .done { opacity: 0.55; }
+  .done img { filter: grayscale(0.7) brightness(0.75); }
+  .mini { height: 3px; background: rgba(233,237,247,0.12); border-radius: 99px; margin-top: 7px; }
+  .minif { height: 100%; width: 39%; border-radius: 99px; background: linear-gradient(90deg,#E8A94F,#F5C97B); }
+  /* 播放器 */
+  .pcenter { text-align: center; margin-top: 30px; }
+  .peb { font-size: 12px; color: #5A6787; }
+  .pt1 { font-size: 24px; font-weight: 700; margin-top: 7px; }
+  .dim .pt1 { color: #B8C2DB; }
+  .pb { font-size: 13px; color: #93A0BF; margin-top: 6px; }
+  .lampstage { position: relative; display: flex; justify-content: center; align-items: center; height: 280px; }
+  .halo { position: absolute; width: 310px; height: 310px; border-radius: 50%; background: radial-gradient(circle, rgba(245,201,123,0.26) 0%, rgba(245,201,123,0.10) 55%, transparent 72%); animation: breath 4s ease-in-out infinite; }
+  .dim .halo { opacity: 0.28; animation: none; }
+  @keyframes breath { 0%,100% { transform: scale(0.94); } 50% { transform: scale(1.04); } }
+  .lcov { position: relative; width: 200px; height: 200px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(233,237,247,0.14); box-shadow: 0 15px 40px rgba(0,0,0,0.45); }
+  .lcov img { width: 100%; height: 100%; object-fit: cover; }
+  .lshade { position: absolute; inset: 0; background: rgba(10,16,32,0.62); }
+  .ptimes { display: flex; justify-content: space-between; font-size: 12px; color: #93A0BF; padding: 0 7px; }
+  .pbar { height: 4px; background: rgba(233,237,247,0.18); border-radius: 99px; position: relative; }
+  .pbarf { position: absolute; left: 0; top: 0; bottom: 0; width: 42%; background: #F5C97B; border-radius: 99px; }
+  .pknob { position: absolute; left: calc(42% - 6px); top: -5px; width: 12px; height: 12px; border-radius: 50%; background: #F7EAD3; }
+  .ctrls { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 23px; padding: 0 5px; }
+  .cs { width: 60px; text-align: center; font-size: 12px; color: #93A0BF; }
+  .cicon { width: 44px; height: 44px; margin: 0 auto; border-radius: 50%; font-size: 18px; color: #F7EAD3; background: rgba(255,255,255,0.06); border: 1px solid rgba(233,237,247,0.10); display: flex; align-items: center; justify-content: center; }
+  .con { color: #F5C97B; background: rgba(245,201,123,0.14); border-color: rgba(245,201,123,0.4); box-shadow: 0 0 14px rgba(245,201,123,0.25); }
+  .cs .lbl { margin-top: 6px; }
+  .pcirc { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg,#F5C97B,#E8A94F); color: #1A2438; font-size: 22px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(245,201,123,0.45); margin: -7px auto 0; }
+  .dim .pcirc { background: linear-gradient(135deg,#8A744E,#6B5A3C); }
+  .bgm { display: flex; align-items: center; margin-top: 25px; padding: 10px 14px; }
+  .sw { width: 38px; height: 22px; border-radius: 99px; background: rgba(233,237,247,0.15); position: relative; }
+  .sw.on { background: #F5C97B; }
+  .knob { position: absolute; left: 2px; top: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; }
+  .sw.on .knob { left: 18px; }
+  .bgmt { flex: 1; margin-left: 12px; font-size: 13px; }
+  .bgmt .sub { font-size: 11px; color: #93A0BF; margin-top: 2px; }
+  .tip { margin: 22px auto 0; width: fit-content; padding: 7px 20px; border-radius: 99px; font-size: 12px; color: #93A0BF; background: rgba(255,255,255,0.05); border: 1px solid rgba(233,237,247,0.10); }
+</style>
+</head>
+<body>
+<h1>听故事 ·「今夜的灯」改版预览 — 7 屏对照</h1>
+
+<!-- 首页 -->
+<div class="frame"><span class="tag">1 · 首页</span>
+  <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+  <div class="page">
+    <div class="head-row"><span class="muted">11 月 23 日 · 周一</span><span class="head-lamp">晚安时间</span></div>
+    <div class="ptitle">今晚，先把这个故事<span class="lamp">讲完</span>吧</div>
+    <div class="hero">
+      <img src="story-redesign/_design/images/cover-yueliang.jpg">
+      <div class="shade"></div>
+      <div class="badge">昨晚听到 2:03</div>
+      <div class="hov">
+        <div class="htitle">小红帽</div>
+        <div class="hmeta">甜甜姐姐 · 还剩 4 分多钟</div>
+        <div class="hprog"><div class="hbar"><div class="hfill" style="width:39%"></div></div><div class="hplay">▶</div></div>
+      </div>
+    </div>
+    <div class="sect">
+      <div class="shead"><span class="stitle">今晚想听哪一种</span><span class="slink">全部分类</span></div>
+      <div class="cats">
+        <div class="cat card"><div class="ico">☾</div><div class="nm">晚安盒</div></div>
+        <div class="cat card"><div class="ico">∿</div><div class="nm">磨耳朵</div></div>
+        <div class="cat card"><div class="ico">✦</div><div class="nm">涨知识</div></div>
+        <div class="cat card"><div class="ico">❋</div><div class="nm">老故事</div></div>
+      </div>
+    </div>
+    <div class="sect">
+      <div class="shead"><span class="stitle">睡前的孩子都在听</span><span class="slink">慢慢挑</span></div>
+      <div class="rail">
+        <div class="rcard"><img src="story-redesign/_design/images/cover-xiaohongmao.jpg"><div class="rt">小红帽</div><div class="rm">甜甜姐姐 · 5:12</div></div>
+        <div class="rcard"><img src="story-redesign/_design/images/cover-sanzhixiaozhu.jpg"><div class="rt">三只小猪</div><div class="rm">甜甜姐姐 · 7:08</div></div>
+        <div class="rcard"><img src="story-redesign/_design/images/cover-baoshi.jpg" style="width:90px"><div class="rt">消失的宝…</div><div class="rm">阿哲哥哥 · 19:40</div></div>
+      </div>
+    </div>
+    <div class="foot">把手机放到远处，声音刚刚好</div>
+  </div>
+</div>
+
+<!-- 分类 -->
+<div class="frame"><span class="tag">2 · 分类</span>
+  <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+  <div class="page">
+    <div class="ptitle" style="margin-bottom:4px">按今晚的节奏挑</div>
+    <div class="muted" style="font-size:13px;margin-bottom:18px">不按孩子学什么，按孩子现在的状态分</div>
+    <div class="crow card"><img src="story-redesign/_design/images/cover-yueliang.jpg"><div class="cbody"><div class="cnm">晚安盒 <span class="pill-lamp">今晚推荐</span></div><div class="cdesc">今晚先讲这些</div></div><div class="cside">1 个故事 ›</div></div>
+    <div class="crow card"><img src="story-redesign/_design/images/cover-tiankong.jpg"><div class="cbody"><div class="cnm">磨耳朵</div><div class="cdesc">轻轻的，放着就好</div></div><div class="cside">2 个故事 ›</div></div>
+    <div class="crow card"><img src="story-redesign/_design/images/cover-xiaohongmao.jpg"><div class="cbody"><div class="cnm">老故事</div><div class="cdesc">我们小时候也听过</div></div><div class="cside">1 个故事 ›</div></div>
+    <div class="crow card"><img src="story-redesign/_design/images/cover-baoshi.jpg"><div class="cbody"><div class="cnm">涨知识</div><div class="cdesc">睡前两个小问题</div></div><div class="cside">1 个故事 ›</div></div>
+    <div class="shead" style="margin-top:18px"><span class="stitle">晚安盒</span><span class="slink">1 个</span></div>
+    <div class="srow card"><img src="story-redesign/_design/images/cover-yueliang.jpg"><div class="sbody"><div class="st">月亮的秘密</div><div class="sm">阿哲哥哥 · 10:05</div></div><div class="splay">▶</div></div>
+  </div>
+</div>
+
+<!-- 搜索 -->
+<div class="frame"><span class="tag">3 · 搜索（空态）</span>
+  <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+  <div class="page">
+    <div class="sbar card"><span class="muted">⌕</span><span class="faint" style="margin-left:9px">搜故事名、讲的人</span></div>
+    <div class="ehero">
+      <img src="story-redesign/_design/images/main-herovision.jpg">
+      <div class="et">还没有听过故事</div>
+      <div class="es">今晚挑第一个，从《月亮的秘密》开始刚好</div>
+      <div class="ebtn">从今晚的第一个开始</div>
+    </div>
+    <div class="sect">
+      <div class="stitle">大家都在搜</div>
+      <div class="tags"><span class="tagc">小红帽</span><span class="tagc">睡前故事</span><span class="tagc">三只小猪</span><span class="tagc">科普</span><span class="tagc">悬疑</span></div>
+      <div class="es" style="margin-top:15px">也可以直接输入，回车开始搜索</div>
+    </div>
+  </div>
+</div>
+
+<!-- 我的 -->
+<div class="frame"><span class="tag">4 · 我的</span>
+  <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+  <div class="page">
+    <div class="prof card"><div class="ava">听</div><div style="margin-left:14px"><div class="nick">听故事的人</div><div class="psub">已经陪听了 21 个晚上</div></div></div>
+    <div class="stats">
+      <div class="stat card"><div class="snum">2</div><div class="slabel">放在晚安盒里的</div></div>
+      <div class="stat card"><div class="snum">3</div><div class="slabel">听过的故事</div></div>
+    </div>
+    <div class="remind"><div class="moon">☾</div><div class="rbody"><div class="rt1">哄睡提醒开着</div><div class="rt2">每晚 20:30 提醒你打开今晚的故事，到点前 10 分钟也可以取消。</div></div></div>
+    <div class="menu card">
+      <div class="mrow"><span class="mico">♡</span><span class="mtx">收藏的故事</span><span class="faint">›</span></div>
+      <div class="mrow"><span class="mico">☾</span><span class="mtx">听过的晚上</span><span class="faint">›</span></div>
+      <div class="mrow"><span class="mico">✦</span><span class="mtx">关于听故事</span><span class="faint">›</span></div>
+    </div>
+    <div class="foot">听故事 · 内测版</div>
+  </div>
+</div>
+
+<!-- 详情 -->
+<div class="frame"><span class="tag">5 · 详情</span>
+  <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+  <div class="page">
+    <div class="dcov">
+      <img src="story-redesign/_design/images/cover-yueliang.jpg">
+      <div class="shade"></div>
+      <div class="badge" style="left:auto;right:11px;top:11px">♡</div>
+      <div class="dov"><div class="dt">月亮的秘密</div><div class="db">阿哲哥哥 · 10:05</div></div>
+      <div class="dplay">▶</div>
+    </div>
+    <div class="dtags"><span class="pill-lamp">助眠</span><span class="tsoft">10:05</span><span class="tsoft">7421 人听过</span></div>
+    <div class="intro card"><div class="it">关于这个故事</div><div class="ip">温柔的睡前故事，陪孩子安稳入梦。</div></div>
+    <div class="shead" style="margin-top:22px"><span class="stitle">章节 · 2 集</span></div>
+    <div class="ep card"><span class="epnum">1</span><div class="sbody"><div class="ept">第一章 · 古堡来客</div><div class="epd">9:40</div></div><div class="epplay">▶</div></div>
+    <div class="ep card"><span class="epnum">2</span><div class="sbody"><div class="ept">第二章 · 失踪的宝石</div><div class="epd">10:00</div></div><div class="epplay">▶</div></div>
+  </div>
+</div>
+
+<!-- 历史 -->
+<div class="frame"><span class="tag">6 · 听过的晚上</span>
+  <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+  <div class="page">
+    <div class="shead" style="margin-top:10px"><span class="stitle">听过的晚上</span><span class="slink">只看没听完的</span></div>
+    <div class="day">今晚</div>
+    <div class="srow card"><img src="story-redesign/_design/images/cover-xiaohongmao.jpg"><div class="sbody"><div class="st">小红帽</div><div class="sm">听到 2:03 · 还剩 1:49</div><div class="mini"><div class="minif" style="width:39%"></div></div></div><div class="splay">▶</div></div>
+    <div class="day">昨晚</div>
+    <div class="srow card"><img src="story-redesign/_design/images/cover-tiankong.jpg"><div class="sbody"><div class="st">十万个为什么·天空篇</div><div class="sm">听到 7:36 · 还剩 5:00</div><div class="mini"><div class="minif" style="width:60%"></div></div></div><div class="splay">▶</div></div>
+    <div class="srow card done"><img src="story-redesign/_design/images/cover-baoshi.jpg"><div class="sbody"><div class="st muted">消失的宝石</div><div class="sm faint">已经讲完这一夜</div></div></div>
+  </div>
+</div>
+
+<!-- 播放器 -->
+<div class="frame"><span class="tag">7 · 播放页（月亮灯）</span>
+  <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+  <div class="page">
+    <div class="pcenter"><div class="peb">正在讲给你</div><div class="pt1">月亮的秘密</div><div class="pb">阿哲哥哥 · 晚安盒</div></div>
+    <div class="lampstage"><div class="halo"></div><div class="lcov"><img src="story-redesign/_design/images/cover-yueliang.jpg"></div></div>
+    <div class="pbar"><div class="pbarf"></div><div class="pknob"></div></div>
+    <div class="ptimes"><span>4:12</span><span>还剩 5:31</span></div>
+    <div class="ctrls">
+      <div class="cs"><div class="cicon">☾</div><div class="lbl">不定时</div></div>
+      <div class="cs"><div class="cicon" style="border:none;background:none">◀◀</div><div class="lbl">退 15 秒</div></div>
+      <div class="pcirc">❚❚</div>
+      <div class="cs"><div class="cicon" style="border:none;background:none">▶▶</div><div class="lbl">进 15 秒</div></div>
+      <div class="cs"><div class="cicon con">🌙</div><div class="lbl lamp">熄灯</div></div>
+    </div>
+    <div class="bgm card"><div class="sw on"><div class="knob"></div></div><div class="bgmt">背景音乐<div class="sub">星光摇篮曲</div></div><span class="lamp" style="font-size:12px">换一首</span></div>
+    <div class="tip">把手机放到远处，声音刚刚好</div>
+  </div>
+</div>
+
+<!-- 播放页熄灯态 -->
+<div class="frame dim"><span class="tag">8 · 播放页熄灯态</span>
+  <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+  <div class="page">
+    <div class="pcenter"><div class="peb">正在讲给你</div><div class="pt1">月亮的秘密</div><div class="pb">阿哲哥哥 · 晚安盒</div></div>
+    <div class="lampstage"><div class="halo" style="opacity:.28;animation:none"></div><div class="lcov"><img src="story-redesign/_design/images/cover-yueliang.jpg"><div class="lshade"></div></div></div>
+    <div class="pbar"><div class="pbarf" style="width:60%"></div><div class="pknob" style="left:calc(60% - 6px)"></div></div>
+    <div class="ptimes"><span>6:00</span><span>还剩 3:43</span></div>
+    <div class="ctrls">
+      <div class="cs"><div class="cicon con">☾</div><div class="lbl lamp">40 分钟</div></div>
+      <div class="cs"><div class="cicon" style="border:none;background:none">◀◀</div><div class="lbl">退 15 秒</div></div>
+      <div class="pcirc">▶</div>
+      <div class="cs"><div class="cicon" style="border:none;background:none">▶▶</div><div class="lbl">进 15 秒</div></div>
+      <div class="cs"><div class="cicon con">🌙</div><div class="lbl lamp">熄灯</div></div>
+    </div>
+    <div class="bgm card"><div class="sw"><div class="knob"></div></div><div class="bgmt muted">背景音乐<div class="sub">星光摇篮曲</div></div><span class="muted" style="font-size:12px">换一首</span></div>
+    <div class="tip" style="color:#7E8AA8">灯已熄了，故事还在讲</div>
+  </div>
+</div>
+</body>
+</html>

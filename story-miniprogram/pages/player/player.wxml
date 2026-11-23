@@ -1,66 +1,64 @@
-<view class="player-page" wx:if="{{story}}">
-  <!-- 背景光晕 -->
-  <view class="bg-glow" style="background:radial-gradient(circle at 50% 30%, {{story.coverFrom}}, transparent 70%)"></view>
+<view class="player-page {{dim ? 'dim' : ''}}" wx:if="{{story}}">
+  <!-- 标题区 -->
+  <view class="p-head">
+    <view class="p-eyebrow faint">正在讲给你</view>
+    <view class="p-title">{{story.title}}</view>
+    <view class="p-byline muted">{{story.narrator}} · {{catName}}</view>
+  </view>
 
-  <!-- 3D 旋转唱片 -->
-  <view class="disc-stage">
-    <view class="disc {{playing ? 'disc-spin' : ''}}">
-      <view class="disc-label" style="background:linear-gradient(135deg,{{story.coverFrom}},{{story.coverTo}})">
-        <text>{{story.title}}</text>
-      </view>
-      <view class="disc-hole"></view>
+  <!-- 月亮灯：呼吸光晕 + 圆形封面 -->
+  <view class="lamp-stage">
+    <view class="halo {{dim ? 'halo-dim' : ''}} {{playing ? 'halo-breath' : ''}}"></view>
+    <view class="lamp-cover">
+      <image class="lamp-img" src="{{story.cover}}" mode="aspectFill" />
+      <view class="lamp-shade" wx:if="{{dim}}"></view>
     </view>
-    <view class="tonearm {{playing ? 'tonearm-on' : ''}}"></view>
   </view>
 
-  <!-- 故事信息 -->
-  <view class="track-info">
-    <view class="track-title">{{story.title}}</view>
-    <view class="track-artist muted">主播 · {{story.narrator}}</view>
-  </view>
-
-  <!-- 进度条 -->
+  <!-- 进度 -->
   <view class="progress-wrap">
     <slider
       class="progress"
       min="0"
       max="100"
       value="{{duration ? (current / duration * 100) : 0}}"
-      activeColor="#10b981"
-      backgroundColor="#e5ebe7"
-      block-size="20"
-      block-color="#10b981"
+      activeColor="#F5C97B"
+      backgroundColor="rgba(233,237,247,0.18)"
+      block-size="18"
+      block-color="#F7EAD3"
       bindchange="seek"
     />
     <view class="progress-time">
-      <text class="muted">{{currentText}}</text>
-      <text class="muted">{{durationText}}</text>
+      <text class="p-time">{{currentText}}</text>
+      <text class="p-time faint">还剩 {{remainText}}</text>
     </view>
   </view>
 
-  <!-- 播放控制 -->
+  <!-- 控制：定时 / 退15秒 / 播放 / 进15秒 / 熄灯 -->
   <view class="controls">
-    <view class="ctrl-side" bindtap="cycleSpeed">
-      <view class="speed-badge">{{speeds[speedIndex]}}x</view>
-      <text class="ctrl-label muted">倍速</text>
+    <view class="ctrl-side" bindtap="cycleSleep">
+      <view class="ctrl-icon {{sleepIndex > 0 ? 'ctrl-on' : ''}}">☾</view>
+      <text class="ctrl-label muted">{{sleepText}}</text>
     </view>
     <view class="ctrl-main" bindtap="skip" data-dir="-1">
       <view class="skip-btn">◀◀</view>
+      <text class="ctrl-label muted">退 15 秒</text>
     </view>
     <view class="play-main" bindtap="togglePlay">
       <view class="play-circle">{{playing ? '❚❚' : '▶'}}</view>
     </view>
     <view class="ctrl-main" bindtap="skip" data-dir="1">
       <view class="skip-btn">▶▶</view>
+      <text class="ctrl-label muted">进 15 秒</text>
     </view>
-    <view class="ctrl-side" bindtap="cycleSleep">
-      <view class="sleep-badge">{{sleepIndex === 0 ? '☾' : sleepText}}</view>
-      <text class="ctrl-label muted">定时</text>
+    <view class="ctrl-side" bindtap="toggleDim">
+      <view class="ctrl-icon {{dim ? 'ctrl-on' : ''}}">🌙</view>
+      <text class="ctrl-label muted">熄灯</text>
     </view>
   </view>
 
   <!-- 背景音乐 -->
-  <view class="bgm-bar">
+  <view class="bgm-bar night-card">
     <view class="bgm-switch {{bgmOn ? 'bgm-switch-on' : ''}}" bindtap="toggleBgm">
       <view class="bgm-knob {{bgmOn ? 'bgm-knob-on' : ''}}"></view>
     </view>
@@ -68,10 +66,10 @@
       <text class="bgm-title {{bgmOn ? '' : 'muted'}}">背景音乐</text>
       <text class="bgm-track muted">{{bgmName}}</text>
     </view>
-    <view class="bgm-cycle {{bgmOn ? '' : 'muted'}}" bindtap="cycleBgmTrack">换一首</view>
+    <view class="bgm-cycle {{bgmOn ? 'lamp' : 'muted'}}" bindtap="cycleBgmTrack">换一首</view>
   </view>
 
-  <view class="tip muted">内测版 · 拖动进度条可跳转播放位置</view>
+  <view class="tip-pill muted">{{dim ? '灯已熄了，故事还在讲' : '把手机放到远处，声音刚刚好'}}</view>
 </view>
 
-<view class="loading muted" wx:else>加载中…</view>
+<view class="loading muted" wx:else>正在点亮这盏灯…</view>

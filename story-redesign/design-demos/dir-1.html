@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>方向一 · 今夜的灯 — 听故事小程序改版</title>
+<script src="../assets/vendor/react.development.js"></script>
+<script src="../assets/vendor/react-dom.development.js"></script>
+<script src="../assets/vendor/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #0E1830; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+/* ============ 外壳：WechatFrame + Showboard（来自 huashu-design skill） ============ */
+const wechatFrameStyles = {
+  wrapper: { display: 'inline-block', padding: 10, background: '#0b0b0c', borderRadius: 54, boxShadow: '0 0 0 1.5px #2a2a2e, 0 24px 60px rgba(0,0,0,0.28)' },
+  screen: { position: 'relative', borderRadius: 44, overflow: 'hidden' },
+  statusBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 26px 0 30px', fontSize: 15, fontWeight: 600, fontFamily: '-apple-system, "SF Pro Text", "PingFang SC", sans-serif', zIndex: 40, pointerEvents: 'none' },
+  nav: { position: 'absolute', top: 44, left: 0, right: 0, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 30, fontFamily: '-apple-system, "PingFang SC", sans-serif' },
+  navTitle: { fontSize: 17, fontWeight: 500, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  back: { position: 'absolute', left: 6, top: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
+  capsule: { position: 'absolute', top: 48, right: 7, width: 87, height: 32, boxSizing: 'border-box', borderRadius: 16, display: 'flex', alignItems: 'center', zIndex: 50, pointerEvents: 'none' },
+  capsuleHalf: { flex: 1, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  capsuleSep: { width: 0.5, height: 18 },
+  tabBar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 49 + 34, paddingBottom: 34, boxSizing: 'border-box', display: 'flex', zIndex: 30, fontFamily: '-apple-system, "PingFang SC", sans-serif' },
+  tabItem: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, fontSize: 10, cursor: 'pointer' },
+  homeIndicator: { position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', width: 134, height: 5, borderRadius: 999, zIndex: 60, pointerEvents: 'none' },
+};
+function WechatCapsule({ dark }) {
+  const fg = dark ? '#000' : '#fff';
+  const bg = dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.15)';
+  const bd = dark ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.25)';
+  return (
+    <div data-mp-capsule="" data-lint-skip="" style={{ ...wechatFrameStyles.capsule, background: bg, border: `0.5px solid ${bd}` }}>
+      <div style={wechatFrameStyles.capsuleHalf}>
+        <svg width="20" height="6" viewBox="0 0 20 6"><circle cx="3" cy="3" r="2" fill={fg} /><circle cx="10" cy="3" r="2.6" fill={fg} /><circle cx="17" cy="3" r="2" fill={fg} /></svg>
+      </div>
+      <div style={{ ...wechatFrameStyles.capsuleSep, background: bd }} />
+      <div style={wechatFrameStyles.capsuleHalf}>
+        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="none" stroke={fg} strokeWidth="1.6" /><circle cx="9" cy="9" r="2.6" fill={fg} /></svg>
+      </div>
+    </div>
+  );
+}
+function WechatTabBar({ list, active, onChange, color = '#7A7E83', selectedColor = '#111111', backgroundColor = '#ffffff' }) {
+  return (
+    <div data-mp-tabbar="native" data-lint-skip="" style={{ ...wechatFrameStyles.tabBar, background: backgroundColor, borderTop: '0.5px solid rgba(0,0,0,0.12)' }}>
+      {list.map(it => {
+        const on = it.text === active;
+        return (
+          <div key={it.text} style={{ ...wechatFrameStyles.tabItem, color: on ? selectedColor : color }} onClick={() => onChange && onChange(it.text)}>
+            {it.icon ? (typeof it.icon === 'function' ? it.icon(on) : it.icon) : <div style={{ width: 24, height: 24, borderRadius: 6, background: 'currentColor', opacity: on ? 1 : 0.35 }} />}
+            <span>{it.text}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+function WechatFrame({ children, page = 'pages/index/index', title = '', home = false, nav = 'default', navColor = '#ffffff', navText = 'black', back = false, onBack, tab, tabBar, onTabChange, footer, background = '#ffffff', width = 375, height = 812, time = '9:41' }) {
+  const statusColor = navText === 'white' ? '#fff' : '#000';
+  const hasNativeTab = tabBar && tabBar.list && tabBar.list.length;
+  const top = 84;
+  const bottom = hasNativeTab ? 83 : 0;
+  const footRef = React.useRef(null);
+  const [footH, setFootH] = React.useState(0);
+  const [footBg, setFootBg] = React.useState(null);
+  React.useLayoutEffect(() => {
+    const el = footRef.current;
+    setFootH(el ? el.offsetHeight : 0);
+    const c = el && el.firstElementChild ? getComputedStyle(el.firstElementChild).backgroundColor : null;
+    setFootBg(c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent' ? c : null);
+  });
+  return (
+    <div style={wechatFrameStyles.wrapper}>
+      <div style={{ ...wechatFrameStyles.screen, width, height, background }}
+        data-mp-page={page} data-mp-title={title} data-mp-home={home ? '1' : ''} data-mp-nav={nav}
+        data-mp-nav-color={navColor} data-mp-nav-text={navText} data-mp-tab={tab || ''}
+        data-mp-tabbar-config={hasNativeTab ? JSON.stringify({ list: tabBar.list.map(t => t.text), color: tabBar.color || '#7A7E83', selectedColor: tabBar.selectedColor || '#111111', backgroundColor: tabBar.backgroundColor || '#ffffff' }) : ''}>
+        <div data-mp-chrome="" data-lint-skip="" style={{ ...wechatFrameStyles.statusBar, color: statusColor }}>
+          <span>{time}</span>
+          <svg width="66" height="12" viewBox="0 0 66 12" fill={statusColor}>
+            <rect x="0" y="8" width="3" height="4" rx="1" /><rect x="5" y="6" width="3" height="6" rx="1" /><rect x="10" y="3" width="3" height="9" rx="1" /><rect x="15" y="0" width="3" height="12" rx="1" />
+            <path d="M30 11.2a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4zM25.6 6.4a6.4 6.4 0 018.8 0l-1.1 1.1a4.8 4.8 0 00-6.6 0zM23 3.8a10 10 0 0114 0l-1.1 1.1a8.4 8.4 0 00-11.8 0z" />
+            <rect x="41" y="0.75" width="22" height="10.5" rx="3" fill="none" stroke={statusColor} strokeOpacity="0.45" strokeWidth="1" /><rect x="43" y="2.75" width="16" height="6.5" rx="1.5" /><rect x="64" y="4" width="1.5" height="4" rx="0.75" fillOpacity="0.45" />
+          </svg>
+        </div>
+        {nav === 'default' && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: top, background: navColor, zIndex: 25 }} />}
+        {nav === 'default' && (
+          <div style={{ ...wechatFrameStyles.nav, color: statusColor }}>
+            {back && (
+              <div style={wechatFrameStyles.back} onClick={onBack}>
+                <svg width="12" height="20" viewBox="0 0 12 20"><path d="M10 2L2 10l8 8" fill="none" stroke={statusColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </div>
+            )}
+            <div style={wechatFrameStyles.navTitle}>{title}</div>
+          </div>
+        )}
+        <WechatCapsule dark={navText !== 'white'} />
+        <div data-mp-scroll="" style={{ position: 'absolute', top: nav === 'default' ? top : 0, left: 0, right: 0, bottom: bottom + footH, overflow: 'auto' }}>
+          {children}
+        </div>
+        {footer && <div ref={footRef} data-mp-footer="" style={{ position: 'absolute', left: 0, right: 0, bottom, zIndex: 40, paddingBottom: hasNativeTab ? 0 : 34, background: footBg || background }}>{footer}</div>}
+        {hasNativeTab && <WechatTabBar {...tabBar} active={tab} onChange={onTabChange} />}
+        <div style={{ ...wechatFrameStyles.homeIndicator, background: (!hasNativeTab && (footBg ? wechatIsDark(footBg) : navText === 'white')) ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.85)' }} />
+      </div>
+    </div>
+  );
+}
+function wechatIsDark(css) {
+  const m = (css || '').match(/\d+(\.\d+)?/g);
+  if (!m) return false;
+  const [r, g, b] = m.map(Number);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 140;
+}
+function WechatShareCard({ appName, title, icon, children, width = 236 }) {
+  const imgW = width - 16;
+  return (
+    <div style={{ width, background: '#fff', borderRadius: 6, padding: '10px 8px 0', boxSizing: 'border-box', fontFamily: '-apple-system, "PingFang SC", sans-serif', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
+      <div data-lint-skip="" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888', marginBottom: 6 }}>
+        <div style={{ width: 16, height: 16, borderRadius: 999, overflow: 'hidden', background: '#eee', flexShrink: 0 }}>{icon}</div>
+        <span>{appName}</span>
+      </div>
+      <div style={{ fontSize: 14, color: '#111', lineHeight: 1.4, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{title}</div>
+      <div data-mp-share="" style={{ width: imgW, height: imgW * 4 / 5, overflow: 'hidden', background: '#f2f2f2', position: 'relative' }}>{children}</div>
+      <div data-lint-skip="" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#999', borderTop: '0.5px solid #eee', marginTop: 8, padding: '6px 0' }}>
+        <svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="none" stroke="#7d7df0" strokeWidth="1.4" /><circle cx="6" cy="6" r="1.8" fill="#7d7df0" /></svg>
+        <span>小程序</span>
+      </div>
+    </div>
+  );
+}
+function ShowboardLabel({ s, theme, width }) {
+  return (
+    <div style={{ width, marginBottom: 10 }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: theme.fg, lineHeight: 1.3 }}>{s.label}</div>
+      {s.note && <div style={{ fontSize: 13, color: theme.muted, lineHeight: 1.5, marginTop: 2 }}>{s.note}</div>}
+    </div>
+  );
+}
+function ShowboardPhone({ s, theme, x, y, scale, phoneW, phoneH }) {
+  return (
+    <div style={{ position: 'absolute', left: x, top: y, width: phoneW * scale }}>
+      <ShowboardLabel s={s} theme={theme} width={phoneW * scale} />
+      <div style={{ width: phoneW * scale, height: phoneH * scale }}>
+        <div style={{ transform: `scale(${scale})`, transformOrigin: '0 0', width: phoneW }}>{s.node}</div>
+      </div>
+    </div>
+  );
+}
+function Showboard({ layout = 'hero', theme = {}, title, kicker, lede, screens = [], closeup, aside, phoneW = 395, phoneH = 832, footnote }) {
+  const t = { bg: '#F2F1EC', fg: '#1B1B1B', muted: '#6B6B66', accent: '#C2410C', font: 'inherit', ...theme };
+  const W = 1440, M = 56;
+  const mainIdx = Math.max(0, screens.findIndex((s) => s.main));
+  const main = screens[mainIdx], rest = screens.filter((_, i) => i !== mainIdx);
+  const LABEL = 56;
+  const placed = [];
+  let lines = [], close = null, asidePos = null, height = 0;
+  if (layout === 'hero') {
+    const big = 0.95, small = 0.76;
+    const my = 250;
+    placed.push({ s: main, x: M, y: my, scale: big });
+    const colX = [M + phoneW * big + 56, M + phoneW * big + 56 + phoneW * small + 36];
+    rest.forEach((s, i) => {
+      const col = i % 2, row = Math.floor(i / 2);
+      placed.push({ s, x: colX[col], y: my - 40 + (col ? 140 : 0) + row * (phoneH * small + LABEL + 36), scale: small });
+    });
+    asidePos = { x: colX[1] + phoneW * small + 56, y: my + 40, w: W - M - (colX[1] + phoneW * small + 56) };
+  } else if (layout === 'flow') {
+    const sc = 0.8, step = phoneW * sc + 70;
+    const perRow = Math.max(1, Math.floor((W - 2 * M + 70) / step));
+    screens.forEach((s, i) => {
+      const row = Math.floor(i / perRow), col = i % perRow;
+      const x = M + col * step, y = 250 + row * (phoneH * sc + LABEL + 90) + col * 46;
+      placed.push({ s, x, y, scale: sc });
+      if (i > 0 && col > 0) {
+        const p = placed[i - 1];
+        lines.push({ x1: p.x + phoneW * sc - 6, y1: p.y + LABEL + phoneH * sc * 0.55, x2: x + 6, y2: y + LABEL + phoneH * sc * 0.45, via: s.via });
+      }
+    });
+    asidePos = { x: W - M - 300, y: 40, w: 300 };
+  } else {
+    const sc = 1.0;
+    placed.push({ s: main, x: M, y: 240, scale: sc });
+    const cx = M + phoneW * sc + 60, cw = 520;
+    close = { x: cx, y: 240, w: cw };
+    rest.slice(0, 3).forEach((s, i) => placed.push({ s, x: cx + cw + 56, y: 150 + i * (phoneH * 0.62 + LABEL + 24), scale: 0.62 }));
+    rest.slice(3).forEach((s, i) => placed.push({ s, x: cx + i * (phoneW * 0.62 + 30), y: 240 + LABEL + 560 + 40, scale: 0.62 }));
+    asidePos = { x: cx, y: 40, w: cw };
+  }
+  placed.forEach((p) => { height = Math.max(height, p.y + LABEL + phoneH * p.scale + M); });
+  if (close) height = Math.max(height, close.y + 600);
+  return (
+    <div data-showboard={layout} style={{ position: 'relative', width: W, height, background: t.bg, color: t.fg, fontFamily: t.font, overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', left: M, top: 56, width: layout === 'closeup' ? 340 : 760 }}>
+        {kicker && <div style={{ fontSize: 14, color: t.accent, fontWeight: 700, marginBottom: 10 }}>{kicker}</div>}
+        <div style={{ fontSize: layout === 'flow' ? 64 : 56, fontWeight: 800, lineHeight: 1.05 }}>{title}</div>
+        {lede && <div style={{ fontSize: 16, lineHeight: 1.65, color: t.fg, opacity: 0.86, marginTop: 18 }}>{lede}</div>}
+      </div>
+      {lines.length > 0 && (
+        <svg width={W} height={height} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          {lines.map((l, i) => (
+            <g key={i}>
+              <path d={`M${l.x1},${l.y1} C${(l.x1 + l.x2) / 2},${l.y1} ${(l.x1 + l.x2) / 2},${l.y2} ${l.x2},${l.y2}`} fill="none" stroke={t.accent} strokeWidth="2" strokeDasharray="5 5" />
+              <circle cx={l.x2} cy={l.y2} r="4" fill={t.accent} />
+              {l.via && <text x={(l.x1 + l.x2) / 2} y={(l.y1 + l.y2) / 2 - 10} textAnchor="middle" fontSize="13" fill={t.muted}>{l.via}</text>}
+            </g>
+          ))}
+        </svg>
+      )}
+      {placed.map((p, i) => <ShowboardPhone key={i} {...p} theme={t} phoneW={phoneW} phoneH={phoneH} />)}
+      {close && closeup && (
+        <div style={{ position: 'absolute', left: close.x, top: close.y, width: close.w }}>
+          <ShowboardLabel s={closeup} theme={t} width={close.w} />
+          <div style={{ width: close.w, height: 560, overflow: 'hidden', borderRadius: 18, background: t.fg === '#1B1B1B' ? '#fff' : 'rgba(255,255,255,0.06)', padding: 24 }}>
+            <div style={{ zoom: closeup.scale || 2, width: (close.w - 48) / (closeup.scale || 2) }}>{closeup.node}</div>
+          </div>
+        </div>
+      )}
+      {aside && asidePos && <div style={{ position: 'absolute', left: asidePos.x, top: asidePos.y, width: asidePos.w }}>{aside}</div>}
+      {footnote && <div style={{ position: 'absolute', left: M, bottom: 28, fontSize: 12, color: t.muted }}>{footnote}</div>}
+    </div>
+  );
+}
+Object.assign(window, { WechatFrame, WechatCapsule, WechatTabBar, WechatShareCard, Showboard });
+
+/* ============ dir-1 · 今夜的灯 ============ */
+const C = {
+  night1: '#0F1B33', night2: '#1B2A4A', night3: '#24365C',
+  lamp: '#F5C97B', lampDeep: '#E8A94F', moon: '#F7EAD3',
+  fg: '#E9EDF7', muted: '#93A0BF', faint: '#5A6787',
+  card: 'rgba(255,255,255,0.06)', line: 'rgba(233,237,247,0.10)',
+};
+const IMG = {
+  xiaohongmao: '../assets/cover-xiaohongmao.jpg',
+  xiaozhu: '../assets/cover-sanzhixiaozhu.jpg',
+  yueliang: '../assets/cover-yueliang.jpg',
+  huoqubing: '../assets/cover-huoqubing.jpg',
+  tiankong: '../assets/cover-tiankong.jpg',
+  baoshi: '../assets/cover-baoshi.jpg',
+  herovision: '../assets/main-herovision.jpg',
+};
+const STORIES = [
+  { id: 3, title: '月亮的秘密', narrator: '阿哲哥哥', cat: '晚安', desc: '温柔的睡前故事，陪孩子安稳入梦。', dur: '10:05', played: '7421', img: IMG.yueliang, progress: 0.42 },
+  { id: 1, title: '小红帽', narrator: '甜甜姐姐', cat: '经典', desc: '经典童话，告诉孩子不要轻信陌生人。', dur: '5:12', played: '1.3万', img: IMG.xiaohongmao },
+  { id: 2, title: '三只小猪', narrator: '甜甜姐姐', cat: '经典', desc: '勤劳和智慧，才能盖起最结实的房子。', dur: '7:08', played: '9632', img: IMG.xiaozhu },
+  { id: 6, title: '消失的宝石', narrator: '阿哲哥哥', cat: '冒险', desc: '一场发生在古堡里的离奇失窃案。', dur: '19:40', played: '3315', img: IMG.baoshi, episodes: 2 },
+];
+const CATS = [
+  { key: 'sleep', name: '晚安盒', desc: '哄睡专用，越听越困', count: 12, moon: true },
+  { key: 'ears', name: '磨耳朵', desc: '白天当背景音的小故事', count: 18 },
+  { key: 'know', name: '涨知识', desc: '为什么星星会眨眼', count: 9 },
+  { key: 'classic', name: '老故事', desc: '小红帽和它的朋友们', count: 15 },
+];
+
+const d1 = {}; // styles registry（本文件唯一，命名安全）
+
+/* —— 小组件 —— */
+function Lamp({ size = 220, img, playing = true, dim = false }) {
+  // 签名组件：月亮灯——圆形封面外一圈呼吸光晕
+  return (
+    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto' }}>
+      <div style={{
+        position: 'absolute', inset: -34, borderRadius: '50%',
+        background: `radial-gradient(circle, rgba(245,201,123,${dim ? 0.10 : 0.26}) 0%, rgba(245,201,123,${dim ? 0.04 : 0.10}) 55%, transparent 72%)`,
+        animation: playing && !dim ? 'lampBreath 4s ease-in-out infinite' : 'none',
+      }} />
+      <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', overflow: 'hidden', border: `1.5px solid rgba(245,201,123,${dim ? 0.25 : 0.6})`, boxShadow: dim ? '0 8px 40px rgba(0,0,0,0.5)' : '0 10px 60px rgba(232,169,79,0.35)' }}>
+        <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: dim ? 0.55 : 1, transition: 'opacity 0.6s' }} />
+        <div style={{ position: 'absolute', inset: 0, background: dim ? 'linear-gradient(rgba(10,16,32,0.55), rgba(10,16,32,0.7))' : 'none', transition: 'background 0.6s' }} />
+      </div>
+      <style>{`@keyframes lampBreath { 0%,100% { transform: scale(0.94); opacity: 0.75; } 50% { transform: scale(1.04); opacity: 1; } }`}</style>
+    </div>
+  );
+}
+function TabIcon({ kind, on }) {
+  const stroke = on ? C.lamp : C.muted;
+  const sw = 1.8;
+  if (kind === 'home') return (
+    <svg width="22" height="22" viewBox="0 0 22 22"><path d="M3.5 9.5 L11 3.5 L18.5 9.5 V18 a1 1 0 0 1 -1 1 H4.5 a1 1 0 0 1 -1 -1 Z" fill="none" stroke={stroke} strokeWidth={sw} strokeLinejoin="round" /><path d="M8.5 19 v-5.5 a1 1 0 0 1 1 -1 h3 a1 1 0 0 1 1 1 V19" fill="none" stroke={stroke} strokeWidth={sw} /></svg>
+  );
+  if (kind === 'cat') return (
+    <svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="3.5" width="6.2" height="6.2" rx="1.6" fill="none" stroke={stroke} strokeWidth={sw} /><rect x="12.3" y="3.5" width="6.2" height="6.2" rx="3.1" fill="none" stroke={stroke} strokeWidth={sw} /><rect x="3.5" y="12.3" width="6.2" height="6.2" rx="3.1" fill="none" stroke={stroke} strokeWidth={sw} /><rect x="12.3" y="12.3" width="6.2" height="6.2" rx="1.6" fill="none" stroke={stroke} strokeWidth={sw} /></svg>
+  );
+  if (kind === 'search') return (
+    <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="10" cy="10" r="6" fill="none" stroke={stroke} strokeWidth={sw} /><path d="M14.5 14.5 L18 18" stroke={stroke} strokeWidth={sw} strokeLinecap="round" /></svg>
+  );
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="7.5" r="3.6" fill="none" stroke={stroke} strokeWidth={sw} /><path d="M4.5 18.5 a6.5 5 0 0 1 13 0" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" /></svg>
+  );
+}
+const TAB_LIST = [
+  { text: '首页', icon: (on) => <TabIcon kind="home" on={on} /> },
+  { text: '分类', icon: (on) => <TabIcon kind="cat" on={on} /> },
+  { text: '搜索', icon: (on) => <TabIcon kind="search" on={on} /> },
+  { text: '我的', icon: (on) => <TabIcon kind="mine" on={on} /> },
+];
+function ProgressBar({ ratio, color = C.lamp }) {
+  return (
+    <div style={{ height: 3, borderRadius: 3, background: 'rgba(255,255,255,0.14)', position: 'relative' }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${ratio * 100}%`, borderRadius: 3, background: color }} />
+      <div style={{ position: 'absolute', left: `${ratio * 100}%`, top: '50%', transform: 'translate(-50%,-50%)', width: 9, height: 9, borderRadius: 9, background: color, boxShadow: '0 0 8px rgba(245,201,123,0.8)' }} />
+    </div>
+  );
+}
+
+/* —— 屏：首页 —— */
+function HomeScreen({ state }) {
+  const s = state; // { tab, setTab }
+  const featured = STORIES[0];
+  return (
+    <div style={{ minHeight: '100%', background: `linear-gradient(180deg, ${C.night1} 0%, ${C.night2} 60%, #233758 100%)`, padding: '10px 20px 30px', color: C.fg }}>
+      {/* 页眉：今晚的时间 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 6 }}>
+        <div style={{ fontSize: 13, color: C.muted }}>11 月 23 日 · 周一</div>
+        <div style={{ fontSize: 13, color: C.lamp, letterSpacing: 1 }}>晚安时间</div>
+      </div>
+      <div style={{ fontSize: 26, fontWeight: 700, marginTop: 10, lineHeight: 1.35 }}>
+        今晚，先把这个故事<span style={{ color: C.lamp }}>讲完</span>吧
+      </div>
+
+      {/* 继续听：一扇小窗 */}
+      <div style={{ marginTop: 18, borderRadius: 20, overflow: 'hidden', position: 'relative', cursor: 'pointer', boxShadow: '0 14px 44px rgba(6,12,26,0.5)', border: '1px solid rgba(245,201,123,0.18)' }}
+        onClick={() => s.open('player')}>
+        <div style={{ position: 'relative', height: 210 }}>
+          <img src={featured.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(15,27,51,0.05) 30%, rgba(15,27,51,0.88) 100%)' }} />
+          <div style={{ position: 'absolute', left: 16, top: 14, background: 'rgba(15,27,51,0.55)', backdropFilter: 'blur(6px)', color: C.lamp, fontSize: 12, padding: '4px 12px', borderRadius: 999, border: '1px solid rgba(245,201,123,0.3)' }}>
+            昨晚听到 4:12
+          </div>
+          <div style={{ position: 'absolute', left: 16, right: 16, bottom: 14 }}>
+            <div style={{ fontSize: 22, fontWeight: 700 }}>{featured.title}</div>
+            <div style={{ fontSize: 12.5, color: C.muted, marginTop: 4 }}>{featured.narrator} · 还剩 5 分 53 秒</div>
+            <div style={{ marginTop: 10 }}><ProgressBar ratio={0.42} /></div>
+          </div>
+          <div style={{ position: 'absolute', right: 16, bottom: 16, width: 46, height: 46, borderRadius: 999, background: C.lamp, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(232,169,79,0.5)' }}>
+            <svg width="16" height="16" viewBox="0 0 16 16"><path d="M5 3 L12 8 L5 13 Z" fill={C.night1} /></svg>
+          </div>
+        </div>
+      </div>
+
+      {/* 分类：按今晚的节奏 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 26, marginBottom: 12 }}>
+        <div style={{ fontSize: 17, fontWeight: 700 }}>今晚想听哪一种</div>
+        <div style={{ fontSize: 12, color: C.muted, cursor: 'pointer' }} onClick={() => s.open('category')}>全部分类</div>
+      </div>
+      <div style={{ display: 'flex', gap: 10 }}>
+        {CATS.slice(0, 3).map((c) => (
+          <div key={c.key} onClick={() => s.open('category')} style={{ flex: 1, background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, padding: '12px 6px 10px', textAlign: 'center', cursor: 'pointer' }}>
+            <div style={{ width: 30, height: 30, margin: '0 auto 8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: c.moon ? 'radial-gradient(circle at 35% 35%, #F7EAD3, #E8A94F)' : 'transparent' }}>
+              {c.moon
+                ? <div style={{ width: 12, height: 12, borderRadius: 12, background: C.night1, opacity: 0.25 }} />
+                : c.key === 'ears'
+                  ? <svg width="18" height="18" viewBox="0 0 18 18"><path d="M3 6 q3 -3 6 0 t6 0 M3 11 q3 -3 6 0 t6 0" fill="none" stroke={C.lamp} strokeWidth="1.4" strokeLinecap="round" /></svg>
+                  : <svg width="18" height="18" viewBox="0 0 18 18"><path d="M9 2 l1.8 4.2 4.7 0.4 -3.6 3 1.1 4.6 -4 -2.5 -4 2.5 1.1 -4.6 -3.6 -3 4.7 -0.4 Z" fill="none" stroke={C.lamp} strokeWidth="1.3" strokeLinejoin="round" /></svg>}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</div>
+            <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3 }}>{c.count} 个</div>
+          </div>
+        ))}
+      </div>
+
+      {/* 别的孩子也在听 */}
+      <div style={{ fontSize: 17, fontWeight: 700, margin: '26px 0 12px' }}>睡前的孩子都在听</div>
+      <div style={{ display: 'flex', gap: 12 }}>
+        {STORIES.slice(1, 3).map((st) => (
+          <div key={st.id} onClick={() => s.open('detail')} style={{ width: 130, cursor: 'pointer' }}>
+            <div style={{ width: 130, height: 130, borderRadius: 16, overflow: 'hidden', border: `1px solid ${C.line}` }}>
+              <img src={st.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 600, marginTop: 8 }}>{st.title}</div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>{st.narrator} · {st.dur}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* —— 屏：分类 —— */
+function CategoryScreen({ state }) {
+  const s = state;
+  return (
+    <div style={{ minHeight: '100%', background: `linear-gradient(180deg, ${C.night1}, ${C.night2})`, padding: '10px 20px 30px', color: C.fg }}>
+      <div style={{ fontSize: 26, fontWeight: 700, marginTop: 6 }}>按今晚的节奏挑</div>
+      <div style={{ fontSize: 13, color: C.muted, marginTop: 6 }}>不按学科分，按孩子的状态分</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 20 }}>
+        {CATS.map((c, i) => (
+          <div key={c.key} onClick={() => s.open('detail')} style={{ display: 'flex', gap: 14, alignItems: 'center', background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, padding: 14, cursor: 'pointer' }}>
+            <div style={{ width: 64, height: 64, borderRadius: 14, overflow: 'hidden', flexShrink: 0 }}>
+              <img src={[IMG.yueliang, IMG.tiankong, IMG.baoshi, IMG.xiaohongmao][i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>{c.name}</div>
+                {c.key === 'sleep' && <span style={{ fontSize: 10.5, color: C.night1, background: C.lamp, borderRadius: 999, padding: '2px 8px', fontWeight: 700 }}>今晚推荐</span>}
+              </div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>{c.desc}</div>
+              <div style={{ fontSize: 11, color: C.faint, marginTop: 6 }}>{c.count} 个故事 · 更新到上周</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M5 3 L10 7 L5 11" fill="none" stroke={C.muted} strokeWidth="1.6" strokeLinecap="round" /></svg>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* —— 屏：我的 —— */
+function MineScreen({ state }) {
+  const s = state;
+  const rows = [
+    { t: '收藏的故事', n: 2, k: 'fav' }, { t: '听过', n: 6, k: 'hist' },
+    { t: '下载到本机', n: 1, k: 'dl' }, { t: '哄睡提醒 · 每晚 20:30', n: '已开', k: 'remind' },
+  ];
+  return (
+    <div style={{ minHeight: '100%', background: `linear-gradient(180deg, ${C.night1}, ${C.night2})`, padding: '10px 20px 30px', color: C.fg }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
+        <div style={{ width: 54, height: 54, borderRadius: 999, overflow: 'hidden', border: `1.5px solid rgba(245,201,123,0.4)` }}>
+          <img src={IMG.xiaohongmao} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 700 }}>桃桃妈妈</div>
+          <div style={{ fontSize: 12.5, color: C.muted, marginTop: 4 }}>已经陪听了 21 个晚上</div>
+        </div>
+      </div>
+      <div style={{ marginTop: 22, borderRadius: 18, background: 'linear-gradient(135deg, rgba(245,201,123,0.14), rgba(245,201,123,0.05))', border: '1px solid rgba(245,201,123,0.25)', padding: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: C.lamp }}>哄睡提醒已开启</div>
+        <div style={{ fontSize: 12.5, color: C.muted, marginTop: 6, lineHeight: 1.6 }}>每晚 20:30 提醒你打开今晚的故事，到点前 10 分钟也可以取消。</div>
+      </div>
+      <div style={{ marginTop: 20, borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, overflow: 'hidden' }}>
+        {rows.map((r, i) => (
+          <div key={r.k} onClick={() => s.open('detail')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 16px', cursor: 'pointer', borderTop: i ? `1px solid ${C.line}` : 'none' }}>
+            <div style={{ fontSize: 14.5 }}>{r.t}</div>
+            <div style={{ fontSize: 13, color: C.muted }}>{r.n}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 11.5, color: C.faint, textAlign: 'center', marginTop: 24 }}>听故事 · 内测版 v0.3</div>
+    </div>
+  );
+}
+
+/* —— 屏：播放（签名页） —— */
+function PlayerScreen({ state, initialDim }) {
+  const s = state;
+  const st = STORIES[0];
+  const [playing, setPlaying] = React.useState(true);
+  const [dim, setDim] = React.useState(!!initialDim);
+  const [sleepIdx, setSleepIdx] = React.useState(0);
+  const sleepTexts = ['不定时', '20 分钟', '40 分钟', '这集讲完就熄灯'];
+  return (
+    <div style={{ minHeight: '100%', background: dim ? 'linear-gradient(180deg, #0A1226, #101B36)' : `linear-gradient(180deg, ${C.night1}, ${C.night2})`, padding: '0 24px 30px', color: dim ? '#7E8AA8' : C.fg, transition: 'background 0.8s' }}>
+      <div style={{ textAlign: 'center', marginTop: 16 }}>
+        <div style={{ fontSize: 12, color: C.faint }}>正在讲给你听</div>
+        <div style={{ fontSize: 21, fontWeight: 700, marginTop: 8, color: dim ? '#A8B3CE' : C.fg }}>{st.title}</div>
+        <div style={{ fontSize: 12.5, color: C.muted, marginTop: 6 }}>{st.narrator} · 晚安盒</div>
+      </div>
+      <div style={{ marginTop: 30 }}>
+        <Lamp size={216} img={st.img} playing={playing} dim={dim} />
+      </div>
+      {/* 进度 */}
+      <div style={{ marginTop: 26 }}>
+        <ProgressBar ratio={0.42} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 11.5, color: C.muted }}>
+          <span>4:12</span><span>还剩 5:53</span>
+        </div>
+      </div>
+      {/* 控制 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 26, marginTop: 24 }}>
+        <div onClick={() => setSleepIdx((sleepIdx + 1) % 4)} style={{ textAlign: 'center', cursor: 'pointer', width: 64 }}>
+          <div style={{ width: 40, height: 40, margin: '0 auto', borderRadius: 999, border: '1px solid rgba(245,201,123,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M12.5 11.2 a6 6 0 1 1 -5.7 -8.2 a4.8 4.8 0 0 0 5.7 8.2 Z" fill={C.lamp} opacity={sleepIdx ? 1 : 0.45} /></svg>
+          </div>
+          <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5 }}>{sleepTexts[sleepIdx]}</div>
+        </div>
+        <div onClick={() => {}} style={{ width: 44, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: C.muted }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" style={{ margin: '0 auto' }}><path d="M10 3 v14 M3.5 6.5 L10 3 l0 0" fill="none" stroke={C.muted} strokeWidth="1.7" strokeLinecap="round" /><path d="M10 3 L16.5 6.5" fill="none" stroke={C.muted} strokeWidth="1.7" strokeLinecap="round" /><path d="M7 17 h6" stroke={C.muted} strokeWidth="1.7" strokeLinecap="round" /></svg>
+          <div style={{ marginTop: 3 }}>15秒</div>
+        </div>
+        <div onClick={() => setPlaying(!playing)} style={{ width: 64, height: 64, borderRadius: 999, background: C.lamp, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: `0 8px 28px rgba(232,169,79,${dim ? 0.2 : 0.45})` }}>
+          {playing
+            ? <svg width="18" height="18" viewBox="0 0 18 18"><rect x="4" y="3" width="3.4" height="12" rx="1" fill={C.night1} /><rect x="10.6" y="3" width="3.4" height="12" rx="1" fill={C.night1} /></svg>
+            : <svg width="18" height="18" viewBox="0 0 18 18"><path d="M6 3.5 L14 9 L6 14.5 Z" fill={C.night1} /></svg>}
+        </div>
+        <div onClick={() => {}} style={{ width: 44, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: C.muted }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" style={{ margin: '0 auto' }}><path d="M10 3 v14" stroke={C.muted} strokeWidth="1.7" strokeLinecap="round" /><path d="M10 3 L3.5 6.5" fill="none" stroke={C.muted} strokeWidth="1.7" strokeLinecap="round" /><path d="M10 3 L16.5 6.5" fill="none" stroke={C.muted} strokeWidth="1.7" strokeLinecap="round" /></svg>
+          <div style={{ marginTop: 3 }}>15秒</div>
+        </div>
+        <div onClick={() => setDim(!dim)} style={{ textAlign: 'center', cursor: 'pointer', width: 64 }}>
+          <div style={{ width: 40, height: 40, margin: '0 auto', borderRadius: 999, border: dim ? '1px solid rgba(126,138,168,0.4)' : '1px solid rgba(245,201,123,0.55)', background: dim ? 'rgba(126,138,168,0.12)' : 'rgba(245,201,123,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M11.8 2.5 a7 7 0 1 0 3.7 8.2 a5.6 5.6 0 0 1 -3.7 -8.2 Z" fill={dim ? '#7E8AA8' : C.lamp} /></svg>
+          </div>
+          <div style={{ fontSize: 10.5, color: C.muted, marginTop: 5 }}>{dim ? '灯已熄' : '熄灯'}</div>
+        </div>
+      </div>
+      {/* 底部提示 */}
+      <div style={{ marginTop: 20, textAlign: 'center' }}>
+        <div style={{ fontSize: 12, color: dim ? '#5A6787' : C.faint, lineHeight: 1.7 }}>
+          {sleepIdx >= 2 && sleepIdx < 3 ? '定时 40 分钟：故事没讲完也轻轻停下' : sleepIdx === 3 ? '这一集讲完，灯自己熄掉' : '把手机放到远处，声音刚刚好'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* —— 屏：详情 —— */
+function DetailScreen({ state }) {
+  const s = state;
+  const st = STORIES[3]; // 消失的宝石（有 2 集）
+  return (
+    <div style={{ minHeight: '100%', background: `linear-gradient(180deg, ${C.night2}, ${C.night1})`, padding: '0 0 30px', color: C.fg }}>
+      <div style={{ position: 'relative', height: 250 }}>
+        <img src={st.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(15,27,51,0.25) 40%, rgba(27,42,74,0.95) 100%)' }} />
+        <div style={{ position: 'absolute', left: 20, bottom: 16 }}>
+          <div style={{ fontSize: 24, fontWeight: 700 }}>{st.title}</div>
+          <div style={{ fontSize: 12.5, color: C.muted, marginTop: 6 }}>{st.narrator} 讲 · 共 2 集 · 全集 19 分 40 秒</div>
+        </div>
+        <div style={{ position: 'absolute', right: 16, bottom: 16, width: 52, height: 52, borderRadius: 999, background: C.lamp, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 8px 24px rgba(232,169,79,0.45)' }}>
+          <svg width="18" height="18" viewBox="0 0 18 18"><path d="M6 4 L13 9 L6 14 Z" fill={C.night1} /></svg>
+        </div>
+      </div>
+      <div style={{ padding: '18px 20px 0' }}>
+        <div style={{ fontSize: 13.5, color: C.fg, opacity: 0.85, lineHeight: 1.75 }}>{st.desc}老管家说宝石自己长了腿——可它明明被锁在盒子里。三个孩子跟着线索，在古堡里找了一整晚。</div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+          <span style={{ fontSize: 11.5, color: C.lamp, background: 'rgba(245,201,123,0.12)', border: '1px solid rgba(245,201,123,0.3)', padding: '4px 12px', borderRadius: 999 }}>冒险</span>
+          <span style={{ fontSize: 11.5, color: C.muted, background: C.card, padding: '4px 12px', borderRadius: 999 }}>适合 5 岁以上</span>
+          <span style={{ fontSize: 11.5, color: C.muted, background: C.card, padding: '4px 12px', borderRadius: 999 }}>3315 人听过</span>
+        </div>
+        <div style={{ fontSize: 16, fontWeight: 700, margin: '22px 0 10px' }}>章节</div>
+        {[
+          { n: 1, t: '第一章 · 古堡来客', d: '9:40' },
+          { n: 2, t: '第二章 · 失踪的宝石', d: '10:00' },
+        ].map((ep) => (
+          <div key={ep.n} onClick={() => s.open('player')} style={{ display: 'flex', alignItems: 'center', gap: 12, background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '12px 14px', marginBottom: 10, cursor: 'pointer' }}>
+            <div style={{ width: 30, height: 30, borderRadius: 999, border: '1px solid rgba(245,201,123,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: C.lamp, flexShrink: 0 }}>{ep.n}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>{ep.t}</div>
+              <div style={{ fontSize: 11.5, color: C.muted, marginTop: 3 }}>{ep.d}</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M5 4 L10 7 L5 10 Z" fill={C.muted} /></svg>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* —— 手机容器：每台独立状态机 —— */
+function Phone({ initial, initialDim }) {
+  const [tab, setTab] = React.useState(initial === 'home' || initial === 'category' || initial === 'mine' ? initial : 'home');
+  const [page, setPage] = React.useState(initial === 'player' || initial === 'detail' ? initial : null);
+  const state = {
+    tab,
+    setTab: (t) => { setTab(t); setPage(null); },
+    open: (p) => setPage(p),
+    back: () => setPage(null),
+  };
+  const tabBar = { list: TAB_LIST, color: C.muted, selectedColor: C.lamp, backgroundColor: '#121D36' };
+  const screens = { home: HomeScreen, category: CategoryScreen, mine: MineScreen };
+  const ScreenComp = page ? (page === 'player' ? PlayerScreen : DetailScreen) : screens[tab];
+  const titles = { home: '听故事', category: '分类', mine: '我的', player: '正在听', detail: '故事详情' };
+  const path = { home: 'pages/index/index', category: 'pages/category/category', mine: 'pages/mine/mine', player: 'pages/player/player', detail: 'pages/detail/detail' };
+  return (
+    <WechatFrame
+      page={path[page || tab]} title={titles[page || tab]} home={!page && tab === 'home'}
+      nav={page ? 'default' : 'default'} navColor={page ? C.night2 : C.night1} navText="white"
+      back={!!page} onBack={state.back}
+      tab={page ? undefined : tab} tabBar={page ? undefined : tabBar} onTabChange={state.setTab}
+      background={C.night1}
+    >
+      {page === 'player' ? <PlayerScreen state={state} initialDim={initialDim} /> : <ScreenComp state={state} />}
+    </WechatFrame>
+  );
+}
+
+/* —— 展示板 —— */
+function Board() {
+  return (
+    <Showboard
+      layout="hero"
+      theme={{ bg: 'radial-gradient(1200px 700px at 30% 0%, #1A2C52 0%, #0E1830 55%, #0A1226 100%)', fg: '#E9EDF7', muted: '#93A0BF', accent: '#F5C97B', font: '-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif' }}
+      kicker="方向一 · 今夜的灯"
+      title="哄睡是一盏灯的事"
+      lede="整个小程序就是今晚的睡前仪式：深夜蓝是房间，暖黄灯光是唯一的光。打开是「接着讲昨晚的故事」，讲完是熄灯。首页没有搜索框，只回答一件事——今晚听哪个。"
+      screens={[
+        { label: '正在听 · 月亮灯', note: '签名处：光晕随播放呼吸，「熄灯」一键进入暗场', main: true, node: <Phone initial="player" /> },
+        { label: '首页', note: '一扇小窗：昨晚听到 4:12，接着讲', node: <Phone initial="home" /> },
+        { label: '分类', note: '按孩子状态分，不按学科分', node: <Phone initial="category" /> },
+        { label: '我的', note: '哄睡提醒与听过的夜晚', node: <Phone initial="mine" /> },
+        { label: '详情 · 连播章节', note: '多章节故事按集播', node: <Phone initial="detail" /> },
+      ]}
+      aside={
+        <div>
+          <WechatShareCard appName="听故事" title="今晚的睡前故事：月亮的秘密" icon={<img src={IMG.herovision} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}>
+            <img src={IMG.yueliang} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </WechatShareCard>
+          <div style={{ marginTop: 16, fontSize: 12.5, lineHeight: 1.8, color: C.muted }}>
+            <div style={{ color: C.fg, fontWeight: 700, marginBottom: 6 }}>借了什么</div>
+            范式「界面即世界」＋建议句文案：没有红点与排名，全程陈述句。<br />
+            颜色从哄睡场景长：深夜蓝 ×2、灯光暖黄 ×1，光只给正在发生的事。
+            <div style={{ color: C.fg, fontWeight: 700, margin: '10px 0 6px' }}>主入口假设</div>
+            下拉「最近使用」进来的熟客家长：打开就该接着讲，而不是重新挑。
+          </div>
+        </div>
+      }
+      footnote="插画为 AI 生成的设计稿素材 · 375 宽设计基准（1px = 2rpx）· 每台手机均可点击"
+    />
+  );
+}
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<Board />);
+</script>
+</body>
+</html>

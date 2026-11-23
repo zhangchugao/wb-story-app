@@ -1,121 +1,113 @@
-.cover-stage {
-  display: flex;
-  justify-content: center;
-  padding: 30rpx 0 20rpx;
+/* 详情页 · 翻开今晚的故事 */
+.page { padding: 30rpx 40rpx 120rpx; }
+
+.cover-card {
   position: relative;
+  overflow: hidden;
+  border-radius: 40rpx;
+  height: 460rpx;
 }
-.big-cover {
-  width: 420rpx;
-  height: 420rpx;
-  transform: rotateX(10deg) rotateY(-12deg) translateZ(40rpx);
-  box-shadow: 0 40rpx 70rpx rgba(31, 42, 55, 0.22);
-  border: 10rpx solid rgba(255, 255, 255, 0.7);
-  animation: float 4s ease-in-out infinite;
-}
-.big-label { font-size: 72rpx; writing-mode: vertical-rl; letter-spacing: 8rpx; }
-.cover-glow {
+.cover-img { width: 100%; height: 100%; display: block; }
+.cover-shade {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.35), transparent 55%);
+  left: 0; right: 0; bottom: 0;
+  height: 62%;
+  background: linear-gradient(180deg, rgba(10, 16, 32, 0) 0%, rgba(10, 16, 32, 0.8) 80%);
 }
-.cover-shadow {
-  position: absolute;
-  bottom: 0;
-  width: 360rpx;
-  height: 40rpx;
-  background: rgba(31, 42, 55, 0.14);
-  border-radius: 50%;
-  filter: blur(16rpx);
-}
-@keyframes float {
-  0%, 100% { transform: rotateX(10deg) rotateY(-12deg) translateZ(40rpx) translateY(0); }
-  50% { transform: rotateX(10deg) rotateY(-12deg) translateZ(40rpx) translateY(-16rpx); }
-}
-
-.title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 24rpx;
-}
-.title-main { flex: 1; min-width: 0; }
-.story-title { font-size: 46rpx; font-weight: 800; }
-.story-byline { font-size: 24rpx; margin-top: 10rpx; }
 .fav-btn {
-  width: 84rpx;
-  height: 84rpx;
+  position: absolute;
+  top: 24rpx; right: 24rpx;
+  width: 72rpx; height: 72rpx;
   border-radius: 50%;
-  background: #fff;
-  color: #c4cbd2;
-  font-size: 46rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(31, 42, 55, 0.08);
+  font-size: 34rpx;
+  color: var(--moon);
+  background: rgba(10, 16, 32, 0.5);
+  border: 1rpx solid rgba(233, 237, 247, 0.18);
 }
-.fav-on { color: #ef4444; }
-
-.tags { display: flex; gap: 14rpx; margin-top: 24rpx; }
-.pill.soft { background: #f0f5f2; color: #6b7280; }
-
-.intro { margin-top: 36rpx; padding: 30rpx; border-radius: 26rpx; }
-.intro-title { font-size: 28rpx; font-weight: 700; }
-.intro-text { font-size: 26rpx; color: var(--ink-soft); line-height: 1.8; margin-top: 16rpx; }
-
-.episodes { margin-top: 44rpx; }
-.ep-head { margin-bottom: 24rpx; }
-.ep-list { display: flex; flex-direction: column; gap: 16rpx; }
-.ep-row {
+.fav-on { color: var(--lamp); border-color: rgba(245, 201, 123, 0.45); }
+.cover-overlay { position: absolute; left: 34rpx; bottom: 34rpx; right: 140rpx; }
+.cover-title { font-size: 46rpx; font-weight: 700; color: #fff; }
+.cover-byline { font-size: 26rpx; color: rgba(233, 237, 247, 0.78); margin-top: 10rpx; }
+.cover-play {
+  position: absolute;
+  right: 30rpx; bottom: 30rpx;
+  width: 92rpx; height: 92rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--lamp), var(--lamp-deep));
+  color: #1A2438;
+  font-size: 34rpx;
   display: flex;
   align-items: center;
-  gap: 22rpx;
-  padding: 22rpx 26rpx;
-  border-radius: 22rpx;
+  justify-content: center;
+  box-shadow: 0 0 40rpx rgba(245, 201, 123, 0.4);
 }
-.ep-num {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 18rpx;
-  background: var(--mint-soft);
-  color: var(--mint-deep);
-  font-weight: 700;
+
+/* 标签 */
+.tags { display: flex; align-items: center; gap: 16rpx; margin-top: 30rpx; }
+.tag-soft {
+  padding: 6rpx 20rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1rpx solid rgba(233, 237, 247, 0.10);
+}
+
+/* 简介 */
+.intro { margin-top: 32rpx; padding: 30rpx; }
+.intro-title { font-size: 30rpx; font-weight: 600; color: var(--fg); }
+.intro-text { font-size: 28rpx; line-height: 1.7; margin-top: 16rpx; }
+
+/* 章节 */
+.episodes { margin-top: 44rpx; }
+.ep-head { margin-bottom: 22rpx; }
+.ep-list { display: flex; flex-direction: column; gap: 20rpx; }
+.ep-row { display: flex; align-items: center; padding: 24rpx 28rpx; }
+.row-hover { opacity: 0.85; }
+.ep-num { font-size: 28rpx; width: 44rpx; flex-shrink: 0; }
+.ep-info { flex: 1; min-width: 0; }
+.ep-title { font-size: 30rpx; font-weight: 600; color: var(--fg); }
+.ep-dur { font-size: 24rpx; margin-top: 6rpx; }
+.ep-play {
+  width: 64rpx; height: 64rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: rgba(245, 201, 123, 0.14);
+  border: 1rpx solid rgba(245, 201, 123, 0.3);
+  color: var(--lamp);
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 底部播放条 */
+.playbar {
+  position: fixed;
+  left: 40rpx; right: 40rpx; bottom: 40rpx;
+  display: flex;
+  align-items: center;
+  padding: 24rpx 30rpx;
+  border-radius: 999rpx;
+  background: rgba(18, 29, 54, 0.92);
+  border: 1rpx solid rgba(233, 237, 247, 0.12);
+  box-shadow: 0 20rpx 50rpx rgba(0, 0, 0, 0.4);
+}
+.playbar-btn {
+  width: 72rpx; height: 72rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--lamp), var(--lamp-deep));
+  color: #1A2438;
   font-size: 28rpx;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.ep-info { flex: 1; min-width: 0; }
-.ep-title { font-size: 28rpx; font-weight: 600; }
-.ep-dur { font-size: 22rpx; margin-top: 6rpx; }
-.ep-play { color: #10b981; font-size: 30rpx; }
-
-.playbar {
-  position: fixed;
-  left: 24rpx;
-  right: 24rpx;
-  bottom: 32rpx;
-  display: flex;
-  align-items: center;
-  gap: 22rpx;
-  padding: 22rpx 28rpx;
-  border-radius: 999rpx;
-  background: linear-gradient(135deg, #34d399, #10b981);
-  box-shadow: 0 18rpx 40rpx rgba(16, 185, 129, 0.4);
-  z-index: 20;
-}
-.playbar-btn {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.25);
-  color: #fff;
-  font-size: 32rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.playbar-text { flex: 1; }
-.playbar-title { color: #fff; font-size: 30rpx; font-weight: 700; }
-.playbar-sub { color: rgba(255, 255, 255, 0.8); font-size: 22rpx; margin-top: 4rpx; }
-
-.loading { text-align: center; padding: 120rpx; font-size: 26rpx; }
+.playbar-text { margin-left: 24rpx; }
+.playbar-title { font-size: 28rpx; font-weight: 600; color: var(--fg); }
+.playbar-sub { font-size: 24rpx; margin-top: 4rpx; }
+.loading { text-align: center; padding: 200rpx 0; font-size: 26rpx; }

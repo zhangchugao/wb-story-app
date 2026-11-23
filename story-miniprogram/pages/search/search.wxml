@@ -1,60 +1,61 @@
 <view class="page">
   <!-- 搜索框 -->
-  <view class="search-bar">
-    <text class="search-icon">⌕</text>
+  <view class="search-bar night-card">
+    <text class="search-icon muted">⌕</text>
     <input
       class="search-input"
       value="{{keyword}}"
-      placeholder="搜索故事、作者、主播"
+      placeholder="搜故事名、讲的人"
       placeholder-class="ph"
       confirm-type="search"
       bindinput="onInput"
       bindconfirm="onConfirm"
     />
-    <text class="clear-btn" wx:if="{{keyword}}" bindtap="clear">×</text>
+    <text class="clear-btn faint" wx:if="{{keyword}}" bindtap="clear">×</text>
   </view>
 
-  <!-- 热搜（未搜索时） -->
-  <view class="hot-block" wx:if="{{!searched}}">
-    <view class="section-title">大家都在搜</view>
-    <view class="hot-tags">
-      <view
-        class="hot-tag lift"
-        hover-class="lift-hover"
-        wx:for="{{hotKeywords}}"
-        wx:key="*this"
-        bindtap="tapHot"
-        data-word="{{item}}"
-      >
-        <text class="hot-rank">{{index + 1}}</text>
-        <text>{{item}}</text>
-      </view>
+  <!-- 未搜索：引导 + 热搜 -->
+  <block wx:if="{{!searched}}">
+    <view class="empty-hero">
+      <image class="hero-img" src="/assets/covers/main-herovision.jpg" mode="aspectFill" />
+      <view class="empty-title">还没有听过故事</view>
+      <view class="empty-sub muted">今晚挑第一个，从《月亮的秘密》开始刚好</view>
+      <view class="empty-btn" bindtap="goFirst">从今晚的第一个开始</view>
     </view>
-    <view class="hint muted">输入关键词，回车或点击热搜开始搜索</view>
-  </view>
+
+    <view class="hot-block">
+      <view class="section-title">大家都在搜</view>
+      <view class="hot-tags">
+        <view
+          class="hot-tag night-card"
+          wx:for="{{hotKeywords}}"
+          wx:key="*this"
+          bindtap="tapHot"
+          data-word="{{item}}"
+        >{{item}}</view>
+      </view>
+      <view class="hint muted">也可以直接输入，回车开始搜索</view>
+    </view>
+  </block>
 
   <!-- 搜索结果 -->
-  <view class="result-block" wx:else>
-    <view class="result-head">
-      <text class="section-title">搜索结果</text>
-      <text class="muted result-count">{{loading ? '搜索中…' : results.length + ' 个故事'}}</text>
-    </view>
+  <block wx:else>
+    <view class="result-head muted">找到 {{results.length}} 个和「{{lastKeyword}}」有关的故事</view>
 
     <view class="list">
-      <view class="row stage-3d" wx:for="{{results}}" wx:key="id" bindtap="goDetail" data-id="{{item.id}}">
-        <view class="row-card lift" hover-class="lift-hover">
-          <view class="row-cover cover" style="background:linear-gradient(135deg,{{item.coverFrom}},{{item.coverTo}})">
-            <text class="cover-label row-label">{{item.title}}</text>
-          </view>
-          <view class="row-body">
-            <view class="row-title">{{item.title}}</view>
-            <view class="row-desc muted">{{item.author}} · {{item.narrator}}</view>
-            <view class="row-meta muted">{{item.durationText}} · {{item.playText}} 次播放</view>
-          </view>
+      <view class="row night-card" wx:for="{{results}}" wx:key="id" hover-class="row-hover" bindtap="goDetail" data-id="{{item.id}}">
+        <image class="row-thumb" src="{{item.cover}}" mode="aspectFill" />
+        <view class="row-body">
+          <view class="row-title">{{item.title}}</view>
+          <view class="row-meta muted">{{item.narrator}} · {{item.durationText}}</view>
         </view>
+        <view class="row-play" catchtap="goPlayer" data-id="{{item.id}}">▶</view>
       </view>
     </view>
 
-    <view class="empty muted" wx:if="{{!loading && results.length === 0}}">没有找到相关故事，换个词试试</view>
-  </view>
+    <view class="no-result" wx:if="{{!loading && results.length === 0}}">
+      <view class="no-title">没有叫这个名字的故事</view>
+      <view class="no-sub muted">换个词试试，或者先去分类页走走</view>
+    </view>
+  </block>
 </view>

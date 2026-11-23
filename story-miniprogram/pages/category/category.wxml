@@ -1,45 +1,53 @@
-<view class="cat-page">
-  <!-- 左侧分类导航 -->
-  <scroll-view scroll-y class="side">
-    <view class="side-title muted">分类</view>
+<view class="page">
+  <view class="page-title">按今晚的节奏挑</view>
+  <view class="page-sub muted">不按孩子学什么，按孩子现在的状态分</view>
+
+  <!-- 分类行：插画缩略 + 推荐 -->
+  <view class="cat-list">
     <view
-      class="side-item {{activeId === item.id ? 'side-active' : ''}}"
-      wx:for="{{categories}}"
+      class="cat-row night-card {{activeId === item.id ? 'cat-on' : ''}}"
+      wx:for="{{cats}}"
       wx:key="id"
+      hover-class="row-hover"
       bindtap="switchCategory"
       data-id="{{item.id}}"
     >
-      <text class="side-dot" wx:if="{{activeId === item.id}}"></text>
-      <text>{{item.name}}</text>
-    </view>
-  </scroll-view>
-
-  <!-- 右侧故事列表 -->
-  <scroll-view scroll-y class="content">
-    <view class="content-head">
-      <view class="content-title">{{activeId === 1 ? '童话寓言' : activeId === 2 ? '睡前故事' : activeId === 3 ? '历史传奇' : activeId === 4 ? '科普百科' : '悬疑探案'}}</view>
-      <view class="content-sub muted">{{stories.length}} 个故事</view>
-    </view>
-
-    <view class="list">
-      <view class="row stage-3d" wx:for="{{stories}}" wx:key="id" bindtap="goDetail" data-id="{{item.id}}">
-        <view class="row-card lift" hover-class="lift-hover">
-          <view class="row-cover cover" style="background:linear-gradient(135deg,{{item.coverFrom}},{{item.coverTo}})">
-            <text class="cover-label row-label">{{item.title}}</text>
-          </view>
-          <view class="row-body">
-            <view class="row-title">{{item.title}}</view>
-            <view class="row-desc muted">{{item.description}}</view>
-            <view class="row-meta">
-              <text class="pill">{{item.tag}}</text>
-              <text class="muted row-time">{{item.durationText}}</text>
-            </view>
-          </view>
+      <image class="cat-thumb" src="{{item.img}}" mode="aspectFill" />
+      <view class="cat-body">
+        <view class="cat-name">
+          {{item.name}}
+          <text class="pill-lamp" wx:if="{{item.id === 1}}">今晚推荐</text>
         </view>
+        <view class="cat-desc muted">{{item.desc}}</view>
+      </view>
+      <view class="cat-side muted">{{item.count}} 个故事 ›</view>
+    </view>
+  </view>
+
+  <!-- 当前分类下的故事 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-title">{{activeName}}</text>
+      <text class="section-link muted">{{stories.length}} 个</text>
+    </view>
+    <view class="story-list">
+      <view
+        class="story-row night-card"
+        wx:for="{{stories}}"
+        wx:key="id"
+        hover-class="row-hover"
+        bindtap="goDetail"
+        data-id="{{item.id}}"
+      >
+        <image class="story-thumb" src="{{item.cover}}" mode="aspectFill" />
+        <view class="story-body">
+          <view class="story-title">{{item.title}}</view>
+          <view class="story-meta muted">{{item.narrator}} · {{item.durationText}}</view>
+        </view>
+        <view class="story-play" catchtap="goPlayer" data-id="{{item.id}}">▶</view>
       </view>
     </view>
-
-    <view class="empty muted" wx:if="{{!loading && stories.length === 0}}">这个分类还没有故事</view>
+    <view class="empty muted" wx:if="{{!loading && stories.length === 0}}">这一类的故事还在准备中</view>
     <view class="loading muted" wx:if="{{loading}}">加载中…</view>
-  </scroll-view>
+  </view>
 </view>

@@ -1,70 +1,60 @@
-.profile-card {
+/* 我的页 · 陪听的晚上 */
+.page { padding: 30rpx 40rpx 80rpx; }
+
+.profile {
   display: flex;
   align-items: center;
-  gap: 28rpx;
-  padding: 40rpx 32rpx;
-  border-radius: 32rpx;
-  transform: rotateX(4deg);
+  padding: 36rpx 32rpx;
 }
 .avatar {
-  width: 120rpx;
-  height: 120rpx;
-  flex-shrink: 0;
-  border-radius: 36rpx;
-  background: linear-gradient(135deg, #34d399, #10b981);
-  color: #fff;
-  font-size: 56rpx;
-  font-weight: 700;
+  width: 108rpx;
+  height: 108rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--night3), var(--night2));
+  border: 2rpx solid rgba(245, 201, 123, 0.4);
+  color: var(--lamp);
+  font-size: 44rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 14rpx 30rpx rgba(16, 185, 129, 0.3);
+  flex-shrink: 0;
 }
-.profile-info { flex: 1; min-width: 0; }
-.nickname { font-size: 38rpx; font-weight: 800; }
-.profile-desc { font-size: 24rpx; margin-top: 10rpx; }
+.profile-info { margin-left: 28rpx; }
+.nickname { font-size: 36rpx; font-weight: 700; color: var(--fg); }
+.profile-sub { font-size: 26rpx; margin-top: 10rpx; }
 
-.stats {
-  display: flex;
-  gap: 20rpx;
-  margin-top: 24rpx;
-}
-.stat-item {
-  flex: 1;
-  padding: 30rpx;
-  border-radius: 26rpx;
-  text-align: center;
-}
-.stat-num { font-size: 48rpx; font-weight: 800; color: #10b981; }
+.stats { display: flex; gap: 20rpx; margin-top: 24rpx; }
+.stat { flex: 1; padding: 30rpx; }
+.stat-num { font-size: 44rpx; font-weight: 700; color: var(--fg); }
 .stat-label { font-size: 24rpx; margin-top: 8rpx; }
 
-.menu { margin-top: 36rpx; }
-.menu-group { border-radius: 26rpx; overflow: hidden; padding: 8rpx 0; }
+/* 哄睡提醒卡：暖色渐变（全站第二处暖色） */
+.remind-card {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 24rpx;
+  padding: 30rpx;
+  border-radius: 36rpx;
+  background: linear-gradient(135deg, rgba(245, 201, 123, 0.16), rgba(232, 169, 79, 0.08));
+  border: 1rpx solid rgba(245, 201, 123, 0.25);
+}
+.remind-moon { font-size: 40rpx; color: var(--lamp); flex-shrink: 0; }
+.remind-body { margin-left: 22rpx; }
+.remind-title { font-size: 30rpx; font-weight: 600; color: var(--moon); }
+.remind-sub { font-size: 24rpx; color: var(--muted); line-height: 1.6; margin-top: 10rpx; }
+
+/* 入口 */
+.menu { margin-top: 32rpx; overflow: hidden; }
 .menu-row {
   display: flex;
   align-items: center;
-  padding: 26rpx 30rpx;
-  gap: 22rpx;
-  transition: background 0.2s;
+  padding: 30rpx 32rpx;
+  border-bottom: 1rpx solid rgba(233, 237, 247, 0.08);
 }
-.menu-row-hover { background: #f5faf7; }
-.menu-icon {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 18rpx;
-  background: var(--mint-soft);
-  color: var(--mint-deep);
-  font-size: 30rpx;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.menu-text { flex: 1; font-size: 29rpx; }
-.menu-arrow { font-size: 40rpx; color: #c4cbd2; }
+.menu-row:last-child { border-bottom: none; }
+.menu-row-hover { background: rgba(255, 255, 255, 0.04); }
+.menu-icon { font-size: 30rpx; width: 56rpx; }
+.menu-text { flex: 1; font-size: 30rpx; color: var(--fg); }
+.menu-arrow { font-size: 34rpx; }
 
-.footer {
-  text-align: center;
-  font-size: 22rpx;
-  margin-top: 70rpx;
-}
+.footer { text-align: center; font-size: 24rpx; margin-top: 50rpx; }

@@ -1,6 +1,7 @@
 'use strict';
 
 const api = require('../../utils/api');
+const MOCK = require('../../utils/mock');
 
 Page({
   data: {
@@ -17,6 +18,7 @@ Page({
   async loadDetail() {
     this.setData({ loading: true });
     const detail = await api.getDetail(this.storyId);
+    if (detail && !detail.cover) detail.cover = MOCK.coverOf(detail.id);
     this.setData({
       story: detail,
       favorited: detail ? !!detail.favorited : false,
@@ -28,7 +30,7 @@ Page({
     const next = !this.data.favorited;
     this.setData({ favorited: next });
     api.toggleFavorite(this.storyId).catch(() => {});
-    wx.showToast({ title: next ? '已收藏' : '已取消收藏', icon: 'none' });
+    wx.showToast({ title: next ? '放进晚安盒了' : '先收起来了', icon: 'none' });
   },
 
   play(e) {

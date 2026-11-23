@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>方向三 · 故事盒 — 听故事小程序改版</title>
+<script src="../assets/vendor/react.development.js"></script>
+<script src="../assets/vendor/react-dom.development.js"></script>
+<script src="../assets/vendor/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #FFF7EC; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+/* ============ 外壳：WechatFrame + Showboard（来自 huashu-design skill） ============ */
+const wechatFrameStyles = {
+  wrapper: { display: 'inline-block', padding: 10, background: '#0b0b0c', borderRadius: 54, boxShadow: '0 0 0 1.5px #2a2a2e, 0 24px 60px rgba(0,0,0,0.28)' },
+  screen: { position: 'relative', borderRadius: 44, overflow: 'hidden' },
+  statusBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 26px 0 30px', fontSize: 15, fontWeight: 600, fontFamily: '-apple-system, "SF Pro Text", "PingFang SC", sans-serif', zIndex: 40, pointerEvents: 'none' },
+  nav: { position: 'absolute', top: 44, left: 0, right: 0, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 30, fontFamily: '-apple-system, "PingFang SC", sans-serif' },
+  navTitle: { fontSize: 17, fontWeight: 500, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  back: { position: 'absolute', left: 6, top: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
+  capsule: { position: 'absolute', top: 48, right: 7, width: 87, height: 32, boxSizing: 'border-box', borderRadius: 16, display: 'flex', alignItems: 'center', zIndex: 50, pointerEvents: 'none' },
+  capsuleHalf: { flex: 1, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  capsuleSep: { width: 0.5, height: 18 },
+  tabBar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 49 + 34, paddingBottom: 34, boxSizing: 'border-box', display: 'flex', zIndex: 30, fontFamily: '-apple-system, "PingFang SC", sans-serif' },
+  tabItem: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, fontSize: 10, cursor: 'pointer' },
+  homeIndicator: { position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', width: 134, height: 5, borderRadius: 999, zIndex: 60, pointerEvents: 'none' },
+};
+function WechatCapsule({ dark }) {
+  const fg = dark ? '#000' : '#fff';
+  const bg = dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.15)';
+  const bd = dark ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.25)';
+  return (
+    <div data-mp-capsule="" data-lint-skip="" style={{ ...wechatFrameStyles.capsule, background: bg, border: `0.5px solid ${bd}` }}>
+      <div style={wechatFrameStyles.capsuleHalf}>
+        <svg width="20" height="6" viewBox="0 0 20 6"><circle cx="3" cy="3" r="2" fill={fg} /><circle cx="10" cy="3" r="2.6" fill={fg} /><circle cx="17" cy="3" r="2" fill={fg} /></svg>
+      </div>
+      <div style={{ ...wechatFrameStyles.capsuleSep, background: bd }} />
+      <div style={wechatFrameStyles.capsuleHalf}>
+        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="none" stroke={fg} strokeWidth="1.6" /><circle cx="9" cy="9" r="2.6" fill={fg} /></svg>
+      </div>
+    </div>
+  );
+}
+function WechatTabBar({ list, active, onChange, color = '#7A7E83', selectedColor = '#111111', backgroundColor = '#ffffff' }) {
+  return (
+    <div data-mp-tabbar="native" data-lint-skip="" style={{ ...wechatFrameStyles.tabBar, background: backgroundColor, borderTop: '0.5px solid rgba(0,0,0,0.12)' }}>
+      {list.map(it => {
+        const on = it.text === active;
+        return (
+          <div key={it.text} style={{ ...wechatFrameStyles.tabItem, color: on ? selectedColor : color }} onClick={() => onChange && onChange(it.text)}>
+            {it.icon ? (typeof it.icon === 'function' ? it.icon(on) : it.icon) : <div style={{ width: 24, height: 24, borderRadius: 6, background: 'currentColor', opacity: on ? 1 : 0.35 }} />}
+            <span>{it.text}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+function wechatIsDark(css) {
+  const m = (css || '').match(/\d+(\.\d+)?/g);
+  if (!m) return false;
+  const [r, g, b] = m.map(Number);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 140;
+}
+function WechatFrame({ children, page = 'pages/index/index', title = '', home = false, nav = 'default', navColor = '#ffffff', navText = 'black', back = false, onBack, tab, tabBar, onTabChange, footer, background = '#ffffff', width = 375, height = 812, time = '9:41' }) {
+  const statusColor = navText === 'white' ? '#fff' : '#000';
+  const hasNativeTab = tabBar && tabBar.list && tabBar.list.length;
+  const top = 84;
+  const bottom = hasNativeTab ? 83 : 0;
+  const footRef = React.useRef(null);
+  const [footH, setFootH] = React.useState(0);
+  const [footBg, setFootBg] = React.useState(null);
+  React.useLayoutEffect(() => {
+    const el = footRef.current;
+    setFootH(el ? el.offsetHeight : 0);
+    const c = el && el.firstElementChild ? getComputedStyle(el.firstElementChild).backgroundColor : null;
+    setFootBg(c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent' ? c : null);
+  });
+  return (
+    <div style={wechatFrameStyles.wrapper}>
+      <div style={{ ...wechatFrameStyles.screen, width, height, background }}
+        data-mp-page={page} data-mp-title={title} data-mp-home={home ? '1' : ''} data-mp-nav={nav}
+        data-mp-nav-color={navColor} data-mp-nav-text={navText} data-mp-tab={tab || ''}
+        data-mp-tabbar-config={hasNativeTab ? JSON.stringify({ list: tabBar.list.map(t => t.text), color: tabBar.color || '#7A7E83', selectedColor: tabBar.selectedColor || '#111111', backgroundColor: tabBar.backgroundColor || '#ffffff' }) : ''}>
+        <div data-mp-chrome="" data-lint-skip="" style={{ ...wechatFrameStyles.statusBar, color: statusColor }}>
+          <span>{time}</span>
+          <svg width="66" height="12" viewBox="0 0 66 12" fill={statusColor}>
+            <rect x="0" y="8" width="3" height="4" rx="1" /><rect x="5" y="6" width="3" height="6" rx="1" /><rect x="10" y="3" width="3" height="9" rx="1" /><rect x="15" y="0" width="3" height="12" rx="1" />
+            <path d="M30 11.2a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4zM25.6 6.4a6.4 6.4 0 018.8 0l-1.1 1.1a4.8 4.8 0 00-6.6 0zM23 3.8a10 10 0 0114 0l-1.1 1.1a8.4 8.4 0 00-11.8 0z" />
+            <rect x="41" y="0.75" width="22" height="10.5" rx="3" fill="none" stroke={statusColor} strokeOpacity="0.45" strokeWidth="1" /><rect x="43" y="2.75" width="16" height="6.5" rx="1.5" /><rect x="64" y="4" width="1.5" height="4" rx="0.75" fillOpacity="0.45" />
+          </svg>
+        </div>
+        {nav === 'default' && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: top, background: navColor, zIndex: 25 }} />}
+        {nav === 'default' && (
+          <div style={{ ...wechatFrameStyles.nav, color: statusColor }}>
+            {back && (
+              <div style={wechatFrameStyles.back} onClick={onBack}>
+                <svg width="12" height="20" viewBox="0 0 12 20"><path d="M10 2L2 10l8 8" fill="none" stroke={statusColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </div>
+            )}
+            <div style={wechatFrameStyles.navTitle}>{title}</div>
+          </div>
+        )}
+        <WechatCapsule dark={navText !== 'white'} />
+        <div data-mp-scroll="" style={{ position: 'absolute', top: nav === 'default' ? top : 0, left: 0, right: 0, bottom: bottom + footH, overflow: 'auto' }}>
+          {children}
+        </div>
+        {footer && <div ref={footRef} data-mp-footer="" style={{ position: 'absolute', left: 0, right: 0, bottom, zIndex: 40, paddingBottom: hasNativeTab ? 0 : 34, background: footBg || background }}>{footer}</div>}
+        {hasNativeTab && <WechatTabBar {...tabBar} active={tab} onChange={onTabChange} />}
+        <div style={{ ...wechatFrameStyles.homeIndicator, background: (!hasNativeTab && (footBg ? wechatIsDark(footBg) : navText === 'white')) ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.85)' }} />
+      </div>
+    </div>
+  );
+}
+function WechatShareCard({ appName, title, icon, children, width = 236 }) {
+  const imgW = width - 16;
+  return (
+    <div style={{ width, background: '#fff', borderRadius: 6, padding: '10px 8px 0', boxSizing: 'border-box', fontFamily: '-apple-system, "PingFang SC", sans-serif', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
+      <div data-lint-skip="" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888', marginBottom: 6 }}>
+        <div style={{ width: 16, height: 16, borderRadius: 999, overflow: 'hidden', background: '#eee', flexShrink: 0 }}>{icon}</div>
+        <span>{appName}</span>
+      </div>
+      <div style={{ fontSize: 14, color: '#111', lineHeight: 1.4, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{title}</div>
+      <div data-mp-share="" style={{ width: imgW, height: imgW * 4 / 5, overflow: 'hidden', background: '#f2f2f2', position: 'relative' }}>{children}</div>
+      <div data-lint-skip="" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#999', borderTop: '0.5px solid #eee', marginTop: 8, padding: '6px 0' }}>
+        <svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="none" stroke="#7d7df0" strokeWidth="1.4" /><circle cx="6" cy="6" r="1.8" fill="#7d7df0" /></svg>
+        <span>小程序</span>
+      </div>
+    </div>
+  );
+}
+function ShowboardLabel({ s, theme, width }) {
+  return (
+    <div style={{ width, marginBottom: 10 }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: theme.fg, lineHeight: 1.3 }}>{s.label}</div>
+      {s.note && <div style={{ fontSize: 13, color: theme.muted, lineHeight: 1.5, marginTop: 2 }}>{s.note}</div>}
+    </div>
+  );
+}
+function ShowboardPhone({ s, theme, x, y, scale, phoneW, phoneH }) {
+  return (
+    <div style={{ position: 'absolute', left: x, top: y, width: phoneW * scale }}>
+      <ShowboardLabel s={s} theme={theme} width={phoneW * scale} />
+      <div style={{ width: phoneW * scale, height: phoneH * scale }}>
+        <div style={{ transform: `scale(${scale})`, transformOrigin: '0 0', width: phoneW }}>{s.node}</div>
+      </div>
+    </div>
+  );
+}
+function Showboard({ layout = 'hero', theme = {}, title, kicker, lede, screens = [], closeup, aside, phoneW = 395, phoneH = 832, footnote }) {
+  const t = { bg: '#F2F1EC', fg: '#1B1B1B', muted: '#6B6B66', accent: '#C2410C', font: 'inherit', ...theme };
+  const W = 1440, M = 56;
+  const mainIdx = Math.max(0, screens.findIndex((s) => s.main));
+  const main = screens[mainIdx], rest = screens.filter((_, i) => i !== mainIdx);
+  const LABEL = 56;
+  const placed = [];
+  let lines = [], close = null, asidePos = null, height = 0;
+  if (layout === 'hero') {
+    const big = 0.95, small = 0.76;
+    const my = 250;
+    placed.push({ s: main, x: M, y: my, scale: big });
+    const colX = [M + phoneW * big + 56, M + phoneW * big + 56 + phoneW * small + 36];
+    rest.forEach((s, i) => {
+      const col = i % 2, row = Math.floor(i / 2);
+      placed.push({ s, x: colX[col], y: my - 40 + (col ? 140 : 0) + row * (phoneH * small + LABEL + 36), scale: small });
+    });
+    asidePos = { x: colX[1] + phoneW * small + 56, y: my + 40, w: W - M - (colX[1] + phoneW * small + 56) };
+  } else if (layout === 'flow') {
+    const sc = 0.8, step = phoneW * sc + 70;
+    const perRow = Math.max(1, Math.floor((W - 2 * M + 70) / step));
+    screens.forEach((s, i) => {
+      const row = Math.floor(i / perRow), col = i % perRow;
+      const x = M + col * step, y = 250 + row * (phoneH * sc + LABEL + 90) + col * 46;
+      placed.push({ s, x, y, scale: sc });
+      if (i > 0 && col > 0) {
+        const p = placed[i - 1];
+        lines.push({ x1: p.x + phoneW * sc - 6, y1: p.y + LABEL + phoneH * sc * 0.55, x2: x + 6, y2: y + LABEL + phoneH * sc * 0.45, via: s.via });
+      }
+    });
+    asidePos = { x: W - M - 300, y: 40, w: 300 };
+  } else {
+    const sc = 1.0;
+    placed.push({ s: main, x: M, y: 240, scale: sc });
+    const cx = M + phoneW * sc + 60, cw = 520;
+    close = { x: cx, y: 240, w: cw };
+    rest.slice(0, 3).forEach((s, i) => placed.push({ s, x: cx + cw + 56, y: 150 + i * (phoneH * 0.62 + LABEL + 24), scale: 0.62 }));
+    rest.slice(3).forEach((s, i) => placed.push({ s, x: cx + i * (phoneW * 0.62 + 30), y: 240 + LABEL + 560 + 40, scale: 0.62 }));
+    asidePos = { x: cx, y: 40, w: cw };
+  }
+  placed.forEach((p) => { height = Math.max(height, p.y + LABEL + phoneH * p.scale + M); });
+  if (close) height = Math.max(height, close.y + 600);
+  return (
+    <div data-showboard={layout} style={{ position: 'relative', width: W, height, background: t.bg, color: t.fg, fontFamily: t.font, overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', left: M, top: 56, width: layout === 'closeup' ? 340 : 760 }}>
+        {kicker && <div style={{ fontSize: 14, color: t.accent, fontWeight: 700, marginBottom: 10 }}>{kicker}</div>}
+        <div style={{ fontSize: layout === 'flow' ? 64 : 56, fontWeight: 800, lineHeight: 1.05 }}>{title}</div>
+        {lede && <div style={{ fontSize: 16, lineHeight: 1.65, color: t.fg, opacity: 0.86, marginTop: 18 }}>{lede}</div>}
+      </div>
+      {lines.length > 0 && (
+        <svg width={W} height={height} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          {lines.map((l, i) => (
+            <g key={i}>
+              <path d={`M${l.x1},${l.y1} C${(l.x1 + l.x2) / 2},${l.y1} ${(l.x1 + l.x2) / 2},${l.y2} ${l.x2},${l.y2}`} fill="none" stroke={t.accent} strokeWidth="2" strokeDasharray="5 5" />
+              <circle cx={l.x2} cy={l.y2} r="4" fill={t.accent} />
+              {l.via && <text x={(l.x1 + l.x2) / 2} y={(l.y1 + l.y2) / 2 - 10} textAnchor="middle" fontSize="13" fill={t.muted}>{l.via}</text>}
+            </g>
+          ))}
+        </svg>
+      )}
+      {placed.map((p, i) => <ShowboardPhone key={i} {...p} theme={t} phoneW={phoneW} phoneH={phoneH} />)}
+      {close && closeup && (
+        <div style={{ position: 'absolute', left: close.x, top: close.y, width: close.w }}>
+          <ShowboardLabel s={closeup} theme={t} width={close.w} />
+          <div style={{ width: close.w, height: 560, overflow: 'hidden', borderRadius: 18, background: t.fg === '#1B1B1B' ? '#fff' : 'rgba(255,255,255,0.06)', padding: 24 }}>
+            <div style={{ zoom: closeup.scale || 2, width: (close.w - 48) / (closeup.scale || 2) }}>{closeup.node}</div>
+          </div>
+        </div>
+      )}
+      {aside && asidePos && <div style={{ position: 'absolute', left: asidePos.x, top: asidePos.y, width: asidePos.w }}>{aside}</div>}
+      {footnote && <div style={{ position: 'absolute', left: M, bottom: 28, fontSize: 12, color: t.muted }}>{footnote}</div>}
+    </div>
+  );
+}
+Object.assign(window, { WechatFrame, WechatCapsule, WechatTabBar, WechatShareCard, Showboard });
+
+/* ============ dir-3 · 故事盒 ============ */
+const C3 = {
+  sun: '#F6B352', sunDeep: '#E89A2E', sunPale: '#FDF3E0',
+  berry: '#E25B4A', berryDeep: '#C94838',
+  ink: '#3A2A18', inkSoft: '#8A7A66', panel: '#FFFFFF', paper: '#FFF7EC',
+  boxColors: ['#FFE9B8', '#D9F0DF', '#E4EBFF', '#FBE3D4'],
+  boxInks: ['#8A6A1F', '#3D7A55', '#4A62B0', '#B06040'],
+};
+const IMG3 = {
+  xiaohongmao: '../assets/cover-xiaohongmao.jpg',
+  xiaozhu: '../assets/cover-sanzhixiaozhu.jpg',
+  yueliang: '../assets/cover-yueliang.jpg',
+  huoqubing: '../assets/cover-huoqubing.jpg',
+  tiankong: '../assets/cover-tiankong.jpg',
+  baoshi: '../assets/cover-baoshi.jpg',
+  herovision: '../assets/main-herovision.jpg',
+};
+const BOXES = [
+  { name: '晚安盒', desc: '12 本 · 越听越困', img: IMG3.yueliang },
+  { name: '白天盒', desc: '18 本 · 吃饭路上听', img: IMG3.tiankong },
+  { name: '老故事盒', desc: '15 本 · 小时候也听过', img: IMG3.xiaohongmao },
+  { name: '为什么盒', desc: '9 本 · 星星为什么眨眼', img: IMG3.baoshi },
+];
+const LIST3 = [
+  { id: 1, title: '小红帽', who: '甜甜姐姐 讲', dur: '5:12', img: IMG3.xiaohongmao },
+  { id: 2, title: '三只小猪', who: '甜甜姐姐 讲', dur: '7:08', img: IMG3.xiaozhu },
+  { id: 3, title: '月亮的秘密', who: '阿哲哥哥 讲', dur: '10:05', img: IMG3.yueliang },
+  { id: 4, title: '少年将军霍去病', who: '老韩 讲', dur: '15:10', img: IMG3.huoqubing },
+  { id: 6, title: '消失的宝石', who: '阿哲哥哥 讲', dur: '19:40', img: IMG3.baoshi },
+];
+
+function TabIcon3({ kind, on }) {
+  const stroke = on ? C3.berry : C3.inkSoft;
+  const sw = 1.8;
+  if (kind === 'home') return (
+    <svg width="22" height="22" viewBox="0 0 22 22"><path d="M3.5 9.5 L11 3.5 L18.5 9.5 V18 a1 1 0 0 1 -1 1 H4.5 a1 1 0 0 1 -1 -1 Z" fill="none" stroke={stroke} strokeWidth={sw} strokeLinejoin="round" /><path d="M8.5 19 v-5.5 a1 1 0 0 1 1 -1 h3 a1 1 0 0 1 1 1 V19" fill="none" stroke={stroke} strokeWidth={sw} /></svg>
+  );
+  if (kind === 'cat') return (
+    <svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="4.5" width="15" height="13" rx="4" fill="none" stroke={stroke} strokeWidth={sw} /><path d="M3.5 9.5 h15" stroke={stroke} strokeWidth={sw} /><path d="M10.5 9.5 v8" stroke={stroke} strokeWidth={sw} /></svg>
+  );
+  if (kind === 'search') return (
+    <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="10" cy="10" r="6" fill="none" stroke={stroke} strokeWidth={sw} /><path d="M14.5 14.5 L18 18" stroke={stroke} strokeWidth={sw} strokeLinecap="round" /></svg>
+  );
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="7.5" r="3.6" fill="none" stroke={stroke} strokeWidth={sw} /><path d="M4.5 18.5 a6.5 5 0 0 1 13 0" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" /></svg>
+  );
+}
+const TAB3_LIST = [
+  { text: '今晚', icon: (on) => <TabIcon3 kind="home" on={on} /> },
+  { text: '盒子', icon: (on) => <TabIcon3 kind="cat" on={on} /> },
+  { text: '搜索', icon: (on) => <TabIcon3 kind="search" on={on} /> },
+  { text: '我的', icon: (on) => <TabIcon3 kind="mine" on={on} /> },
+];
+function PlayBtn3({ size = 40, dark = false }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: 999, background: C3.berry, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(201,72,56,0.35)' }}>
+      <svg width={size * 0.36} height={size * 0.36} viewBox="0 0 12 12"><path d="M3.5 2 L10 6 L3.5 10 Z" fill="#fff" /></svg>
+    </div>
+  );
+}
+
+/* —— 屏：首页 —— */
+function Home3Screen({ state }) {
+  const s = state;
+  return (
+    <div style={{ minHeight: '100%', background: C3.paper }}>
+      {/* 满版暖阳黄顶部 */}
+      <div style={{ background: `linear-gradient(180deg, ${C3.sun} 0%, ${C3.sunDeep} 130%)`, padding: '12px 22px 74px', color: C3.ink, position: 'relative' }}>
+        <div style={{ fontSize: 13, opacity: 0.75, marginTop: 4 }}>11 月 23 日 · 晚饭后</div>
+        <div style={{ fontSize: 27, fontWeight: 800, marginTop: 10, letterSpacing: 1 }}>今晚听点什么？</div>
+        {/* 继续听条 */}
+        <div onClick={() => s.open('player')} style={{ marginTop: 16, background: 'rgba(255,255,255,0.92)', borderRadius: 18, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', boxShadow: '0 6px 18px rgba(58,42,24,0.15)' }}>
+          <div style={{ width: 46, height: 46, borderRadius: 12, overflow: 'hidden', flexShrink: 0 }}>
+            <img src={IMG3.yueliang} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10.5, color: C3.berry, fontWeight: 700 }}>昨晚听到 4:12</div>
+            <div style={{ fontSize: 15.5, fontWeight: 700, color: C3.ink, marginTop: 2 }}>月亮的秘密</div>
+          </div>
+          <PlayBtn3 size={38} />
+        </div>
+        {/* 两个胶囊动作 */}
+        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+          <div onClick={() => s.open('category')} style={{ flex: 1, background: 'rgba(255,255,255,0.28)', border: '1.5px solid rgba(255,255,255,0.55)', borderRadius: 999, padding: '10px 0', textAlign: 'center', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>开一个盒子挑</div>
+          <div onClick={() => s.open('player')} style={{ flex: 1, background: 'rgba(58,42,24,0.16)', borderRadius: 999, padding: '10px 0', textAlign: 'center', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>随便放一个</div>
+        </div>
+      </div>
+      {/* 白色大圆角面板：像抽屉抬起 */}
+      <div style={{ background: C3.panel, borderRadius: '30px 30px 0 0', margin: '-48px 0 0', padding: '22px 20px 28px', position: 'relative', boxShadow: '0 -8px 24px rgba(58,42,24,0.10)' }}>
+        <div style={{ width: 40, height: 4.5, borderRadius: 4, background: '#EDE3D4', margin: '0 auto 18px' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <div style={{ fontSize: 17.5, fontWeight: 800, color: C3.ink }}>挑一个盒子</div>
+          <div style={{ fontSize: 12, color: C3.inkSoft, cursor: 'pointer' }} onClick={() => s.open('category')}>全部 4 个</div>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 14 }}>
+          {BOXES.map((b, i) => (
+            <div key={b.name} onClick={() => s.open('category')} style={{ width: 'calc(50% - 6px)', borderRadius: 22, padding: 14, background: C3.boxColors[i], cursor: 'pointer' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(58,42,24,0.15)' }}>
+                <img src={b.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <div style={{ fontSize: 15.5, fontWeight: 800, color: C3.ink, marginTop: 10 }}>{b.name}</div>
+              <div style={{ fontSize: 11, color: C3.inkSoft, marginTop: 3, lineHeight: 1.5 }}>{b.desc}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 22, marginBottom: 12 }}>
+          <div style={{ fontSize: 17.5, fontWeight: 800, color: C3.ink }}>孩子们都在听</div>
+          <div style={{ fontSize: 12, color: C3.inkSoft }}>按播放次数</div>
+        </div>
+        {LIST3.slice(0, 2).map((st) => (
+          <div key={st.id} onClick={() => s.open('detail')} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', cursor: 'pointer' }}>
+            <div style={{ width: 52, height: 52, borderRadius: 14, overflow: 'hidden', flexShrink: 0 }}>
+              <img src={st.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C3.ink }}>{st.title}</div>
+              <div style={{ fontSize: 11.5, color: C3.inkSoft, marginTop: 3 }}>{st.who} · {st.dur}</div>
+            </div>
+            <PlayBtn3 size={36} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* —— 屏：盒子（分类） —— */
+function Category3Screen({ state }) {
+  const s = state;
+  return (
+    <div style={{ minHeight: '100%', background: C3.paper }}>
+      <div style={{ background: `linear-gradient(180deg, ${C3.sun}, ${C3.sunDeep} 140%)`, padding: '12px 22px 40px', color: C3.ink }}>
+        <div style={{ fontSize: 27, fontWeight: 800, marginTop: 8 }}>晚安盒</div>
+        <div style={{ fontSize: 13, opacity: 0.8, marginTop: 6 }}>12 本 · 挑一本，越听越困的那种</div>
+      </div>
+      <div style={{ background: C3.panel, borderRadius: '30px 30px 0 0', margin: '-24px 0 0', padding: '20px 20px 28px', boxShadow: '0 -8px 24px rgba(58,42,24,0.10)' }}>
+        <div style={{ width: 40, height: 4.5, borderRadius: 4, background: '#EDE3D4', margin: '0 auto 14px' }} />
+        {LIST3.filter((_, i) => i !== 3).map((st) => (
+          <div key={st.id} onClick={() => s.open('detail')} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: '1px solid #F4EDE1', cursor: 'pointer' }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, overflow: 'hidden', flexShrink: 0 }}>
+              <img src={st.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15.5, fontWeight: 700, color: C3.ink }}>{st.title}</div>
+              <div style={{ fontSize: 12, color: C3.inkSoft, marginTop: 4 }}>{st.who} · {st.dur}</div>
+            </div>
+            <PlayBtn3 size={38} />
+          </div>
+        ))}
+        <div style={{ marginTop: 18, background: C3.sunPale, border: '1.5px dashed rgba(138,106,31,0.35)', borderRadius: 18, padding: '14px', textAlign: 'center', fontSize: 12.5, color: C3.inkSoft }}>
+          这个盒子还剩 8 本没上架 · 明晚接着放
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* —— 屏：播放 —— */
+function Player3Screen({ state }) {
+  const s = state;
+  const st = LIST3[2];
+  const [playing, setPlaying] = React.useState(true);
+  const [sleepIdx, setSleepIdx] = React.useState(2);
+  const sleeps = ['不定时', '20 分钟', '40 分钟', '讲完就停'];
+  return (
+    <div style={{ minHeight: '100%', background: C3.paper }}>
+      <div style={{ background: `linear-gradient(180deg, ${C3.sun}, ${C3.sunDeep} 150%)`, padding: '8px 22px 86px' }}>
+        <div style={{ textAlign: 'center', marginTop: 6 }}>
+          <div style={{ fontSize: 11.5, color: 'rgba(58,42,24,0.7)', fontWeight: 700 }}>正在播给你听</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: C3.ink, marginTop: 8 }}>{st.title}</div>
+          <div style={{ fontSize: 12.5, color: 'rgba(58,42,24,0.75)', marginTop: 5 }}>{st.who}</div>
+        </div>
+        <div style={{ width: 210, height: 210, margin: '22px auto 0', borderRadius: 28, overflow: 'hidden', boxShadow: '0 14px 34px rgba(58,42,24,0.25)', background: '#fff', padding: 8, boxSizing: 'border-box' }}>
+          <img src={st.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 22, display: 'block' }} />
+        </div>
+      </div>
+      <div style={{ background: C3.panel, borderRadius: '30px 30px 0 0', margin: '-60px 0 0', padding: '20px 22px 28px', boxShadow: '0 -8px 24px rgba(58,42,24,0.10)' }}>
+        <div style={{ width: 40, height: 4.5, borderRadius: 4, background: '#EDE3D4', margin: '0 auto 16px' }} />
+        {/* 进度 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: C3.inkSoft, marginBottom: 6 }}>
+          <span>4:12</span><span>10:05</span>
+        </div>
+        <div style={{ height: 5, borderRadius: 5, background: '#F0E7D8', position: 'relative' }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '42%', borderRadius: 5, background: C3.berry }} />
+          <div style={{ position: 'absolute', left: '42%', top: '50%', transform: 'translate(-50%,-50%)', width: 14, height: 14, borderRadius: 999, background: '#fff', border: `3px solid ${C3.berry}`, boxShadow: '0 2px 6px rgba(201,72,56,0.4)' }} />
+        </div>
+        {/* 控制 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, marginTop: 24 }}>
+          <div onClick={() => setSleepIdx((sleepIdx + 1) % 4)} style={{ textAlign: 'center', cursor: 'pointer', width: 62 }}>
+            <div style={{ width: 40, height: 40, margin: '0 auto', borderRadius: 999, background: C3.sunPale, border: `1.5px solid rgba(138,106,31,0.3)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: C3.ink }}>☾</div>
+            <div style={{ fontSize: 10.5, color: C3.inkSoft, marginTop: 5 }}>{sleeps[sleepIdx]}</div>
+          </div>
+          <div onClick={() => {}} style={{ fontSize: 12, color: C3.inkSoft, cursor: 'pointer', width: 48, textAlign: 'center' }}>
+            <svg width="22" height="22" viewBox="0 0 22 22" style={{ margin: '0 auto', display: 'block' }}><path d="M11 3 v16 M3.5 7 L11 3 M11 3 l7.5 4" fill="none" stroke={C3.inkSoft} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <div style={{ marginTop: 3 }}>倒15秒</div>
+          </div>
+          <div onClick={() => setPlaying(!playing)} style={{ width: 66, height: 66, borderRadius: 999, background: C3.berry, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 8px 22px rgba(201,72,56,0.4)' }}>
+            {playing
+              ? <svg width="18" height="18" viewBox="0 0 18 18"><rect x="4" y="3" width="3.6" height="12" rx="1.2" fill="#fff" /><rect x="10.4" y="3" width="3.6" height="12" rx="1.2" fill="#fff" /></svg>
+              : <svg width="18" height="18" viewBox="0 0 18 18"><path d="M6 3.5 L14.5 9 L6 14.5 Z" fill="#fff" /></svg>}
+          </div>
+          <div onClick={() => {}} style={{ fontSize: 12, color: C3.inkSoft, cursor: 'pointer', width: 48, textAlign: 'center' }}>
+            <svg width="22" height="22" viewBox="0 0 22 22" style={{ margin: '0 auto', display: 'block' }}><path d="M11 19 V3 M3.5 15 L11 19 M11 19 l7.5 -4" fill="none" stroke={C3.inkSoft} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <div style={{ marginTop: 3 }}>快15秒</div>
+          </div>
+          <div onClick={() => {}} style={{ textAlign: 'center', cursor: 'pointer', width: 62 }}>
+            <div style={{ width: 40, height: 40, margin: '0 auto', borderRadius: 999, background: C3.sunPale, border: `1.5px solid rgba(138,106,31,0.3)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: C3.ink }}>1x</div>
+            <div style={{ fontSize: 10.5, color: C3.inkSoft, marginTop: 5 }}>倍速</div>
+          </div>
+        </div>
+        <div style={{ marginTop: 20, background: C3.sunPale, borderRadius: 16, padding: '12px 16px', fontSize: 12.5, color: C3.ink, lineHeight: 1.6 }}>
+          定时 <b>{sleeps[sleepIdx]}</b>：到点声音会慢慢变小，再自己停。
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* —— 屏：详情 —— */
+function Detail3Screen({ state }) {
+  const s = state;
+  const st = LIST3[4]; // 消失的宝石
+  return (
+    <div style={{ minHeight: '100%', background: C3.paper }}>
+      <div style={{ background: `linear-gradient(180deg, ${C3.sun}, ${C3.sunDeep} 150%)`, padding: '8px 22px 64px' }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
+          <div style={{ width: 120, height: 120, borderRadius: 20, overflow: 'hidden', background: '#fff', padding: 6, boxSizing: 'border-box', boxShadow: '0 10px 26px rgba(58,42,24,0.22)', flexShrink: 0 }}>
+            <img src={st.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 15, display: 'block' }} />
+          </div>
+          <div style={{ paddingBottom: 6, minWidth: 0 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: C3.ink, lineHeight: 1.3 }}>消失的宝石</div>
+            <div style={{ fontSize: 12.5, color: 'rgba(58,42,24,0.75)', marginTop: 8 }}>阿哲哥哥 讲 · 全 2 集 · 19 分 40 秒</div>
+            <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: C3.ink, background: 'rgba(255,255,255,0.55)', borderRadius: 999, padding: '3px 10px' }}>古堡冒险</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: C3.ink, background: 'rgba(255,255,255,0.55)', borderRadius: 999, padding: '3px 10px' }}>适合 5 岁+</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{ background: C3.panel, borderRadius: '30px 30px 0 0', margin: '-40px 0 0', padding: '20px 20px 90px', boxShadow: '0 -8px 24px rgba(58,42,24,0.10)' }}>
+        <div style={{ width: 40, height: 4.5, borderRadius: 4, background: '#EDE3D4', margin: '0 auto 16px' }} />
+        <div style={{ fontSize: 13.5, color: C3.ink, lineHeight: 1.75 }}>老管家说宝石自己长了腿——可它明明被锁在盒子里。三个孩子跟着线索，在古堡里找了一整晚。</div>
+        <div style={{ fontSize: 16.5, fontWeight: 800, color: C3.ink, marginTop: 20, marginBottom: 8 }}>一集一集听</div>
+        {[
+          { n: 1, t: '古堡来客', d: '9:40' },
+          { n: 2, t: '失踪的宝石', d: '10:00' },
+        ].map((ep) => (
+          <div key={ep.n} onClick={() => s.open('player')} style={{ display: 'flex', alignItems: 'center', gap: 12, background: C3.sunPale, borderRadius: 16, padding: '12px 14px', marginBottom: 10, cursor: 'pointer' }}>
+            <div style={{ width: 30, height: 30, borderRadius: 10, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: C3.ink, flexShrink: 0 }}>{ep.n}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14.5, fontWeight: 700, color: C3.ink }}>{ep.t}</div>
+              <div style={{ fontSize: 11.5, color: C3.inkSoft, marginTop: 3 }}>{ep.d}</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M5 4 L10 7 L5 10 Z" fill={C3.inkSoft} /></svg>
+          </div>
+        ))}
+        <div style={{ fontSize: 12.5, color: C3.inkSoft, marginTop: 14, lineHeight: 1.6 }}>3315 个孩子听过 · 有 289 个孩子从头听到尾</div>
+      </div>
+      {/* 底部固定按钮 */}
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '14px 20px 30px', background: 'linear-gradient(180deg, rgba(255,255,255,0), #fff 30%)' }}>
+        <div onClick={() => s.open('player')} style={{ background: C3.berry, color: '#fff', borderRadius: 999, padding: '15px 0', textAlign: 'center', fontSize: 16, fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 22px rgba(201,72,56,0.4)' }}>从第一集开始听</div>
+      </div>
+    </div>
+  );
+}
+
+/* —— 屏：我的 —— */
+function Mine3Screen({ state }) {
+  const s = state;
+  return (
+    <div style={{ minHeight: '100%', background: C3.paper }}>
+      <div style={{ background: `linear-gradient(180deg, ${C3.sun}, ${C3.sunDeep} 150%)`, padding: '14px 22px 46px', color: C3.ink }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 999, overflow: 'hidden', border: '2.5px solid rgba(255,255,255,0.8)' }}>
+            <img src={IMG3.xiaohongmao} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>桃桃妈妈</div>
+            <div style={{ fontSize: 12, opacity: 0.75, marginTop: 3 }}>已经陪听 21 晚</div>
+          </div>
+        </div>
+      </div>
+      <div style={{ background: C3.panel, borderRadius: '30px 30px 0 0', margin: '-26px 0 0', padding: '20px 20px 28px', boxShadow: '0 -8px 24px rgba(58,42,24,0.10)' }}>
+        <div style={{ width: 40, height: 4.5, borderRadius: 4, background: '#EDE3D4', margin: '0 auto 16px' }} />
+        <div style={{ display: 'flex', gap: 12 }}>
+          {[
+            { n: '21 晚', t: '一起听过' },
+            { n: '2 本', t: '放进收藏' },
+          ].map((b) => (
+            <div key={b.t} style={{ flex: 1, borderRadius: 20, padding: '14px 16px', background: C3.sunPale }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: C3.ink }}>{b.n}</div>
+              <div style={{ fontSize: 12, color: C3.inkSoft, marginTop: 3 }}>{b.t}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 18, background: '#FFF0F0', border: '1.5px solid rgba(201,72,56,0.25)', borderRadius: 18, padding: '14px 16px' }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: C3.berryDeep }}>哄睡闹钟 · 每晚 20:30</div>
+          <div style={{ fontSize: 12, color: C3.inkSoft, marginTop: 5, lineHeight: 1.6 }}>到点提醒你打开今晚的故事，当晚 19:30 前可以改时间。</div>
+        </div>
+        <div style={{ marginTop: 18 }}>
+          {['收藏的故事 · 2 本', '听过的 · 6 本', '下载到本机 · 1 本'].map((r, i) => (
+            <div key={r} onClick={() => s.open('detail')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 2px', borderBottom: i < 2 ? '1px solid #F4EDE1' : 'none', cursor: 'pointer' }}>
+              <div style={{ fontSize: 14.5, color: C3.ink, fontWeight: 600 }}>{r.split(' · ')[0]}</div>
+              <div style={{ fontSize: 13, color: C3.inkSoft }}>{r.split(' · ')[1]}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* —— 手机容器 —— */
+function Phone3({ initial }) {
+  const [tab, setTab] = React.useState(['home', 'box', 'mine'].includes(initial) ? initial : 'home');
+  const [page, setPage] = React.useState(['player', 'detail'].includes(initial) ? initial : null);
+  const state = { setTab: (t) => { setTab(t); setPage(null); }, open: (p) => setPage(p), back: () => setPage(null) };
+  const tabBar = { list: TAB3_LIST, color: C3.inkSoft, selectedColor: C3.berry, backgroundColor: '#FFFFFF' };
+  const screens = { home: Home3Screen, box: Category3Screen, mine: Mine3Screen };
+  const titles = { home: '听故事', box: '晚安盒', mine: '我的', player: '正在听', detail: '故事详情' };
+  const path = { home: 'pages/index/index', box: 'pages/category/category', mine: 'pages/mine/mine', player: 'pages/player/player', detail: 'pages/detail/detail' };
+  const ScreenComp = page === 'player' ? Player3Screen : page === 'detail' ? Detail3Screen : screens[tab];
+  return (
+    <WechatFrame
+      page={path[page || tab]} title={titles[page || tab]} home={!page && tab === 'home'}
+      navColor={page ? C3.sun : C3.sun} navText="black" back={!!page} onBack={state.back}
+      tab={page ? undefined : tab} tabBar={page ? undefined : tabBar} onTabChange={state.setTab}
+      background={C3.paper}
+    >
+      <ScreenComp state={state} />
+    </WechatFrame>
+  );
+}
+
+function Board3() {
+  return (
+    <Showboard
+      layout="flow"
+      theme={{ bg: '#FFF7EC', fg: '#3A2A18', muted: '#8A7A66', accent: '#E25B4A', font: '-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif' }}
+      kicker="方向三 · 故事盒"
+      title="掀开盒子，挑一个故事"
+      lede="满版暖阳黄顶上先回答「今晚听什么」，白色面板像抽屉一样抬起，分类是一只只故事盒。莓红只给一件事：正在播放。整条流程三步——开盒、看一眼、开听。"
+      screens={[
+        { label: '首页 · 今晚听什么', note: '继续听条 + 两个胶囊动作', main: true, node: <Phone3 initial="home" />, via: '点了「开一个盒子挑」' },
+        { label: '盒子 · 晚安盒', note: '一盒故事排队等你', node: <Phone3 initial="box" />, via: '点了一个故事' },
+        { label: '详情 · 先看一眼', note: '简介、集数、谁讲', node: <Phone3 initial="detail" />, via: '点了「从第一集开始听」' },
+        { label: '播放 · 开听', note: '莓红是页面上唯一的热色', node: <Phone3 initial="player" /> },
+        { label: '我的 · 陪听记录', note: '闹钟与收藏', node: <Phone3 initial="mine" /> },
+      ]}
+      aside={
+        <div>
+          <WechatShareCard appName="听故事" title="三只小猪，今晚 7 分钟讲完" icon={<img src={IMG3.xiaozhu} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}>
+            <img src={IMG3.xiaozhu} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </WechatShareCard>
+          <div style={{ marginTop: 16, fontSize: 12.5, lineHeight: 1.8, color: C3.inkSoft }}>
+            <div style={{ color: C3.ink, fontWeight: 700, marginBottom: 6 }}>借了什么</div>
+            Monzo 的机制：满版品牌色顶部 + 白色大圆角面板像抽屉抬起 + 分类是 2 列大圆角「罐子」+ 口语化小标题。<br />
+            表达层全部重长：暖阳黄从「晚饭后的亮堂」来，莓红只给播放态。
+            <div style={{ color: C3.ink, fontWeight: 700, margin: '10px 0 6px' }}>主入口假设</div>
+            群里转发的卡片：点进来先看到那一本，再顺手开盒挑别的。
+          </div>
+        </div>
+      }
+      footnote="插画为 AI 生成的设计稿素材 · 375 宽设计基准（1px = 2rpx）· 每台手机均可点击"
+    />
+  );
+}
+const root3 = ReactDOM.createRoot(document.getElementById('root'));
+root3.render(<Board3 />);
+</script>
+</body>
+</html>

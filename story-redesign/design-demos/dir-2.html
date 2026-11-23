@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>方向二 · 枕边故事书 — 听故事小程序改版</title>
+<script src="../assets/vendor/react.development.js"></script>
+<script src="../assets/vendor/react-dom.development.js"></script>
+<script src="../assets/vendor/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #EFE7D6; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+/* ============ 外壳：WechatFrame + Showboard（来自 huashu-design skill） ============ */
+const wechatFrameStyles = {
+  wrapper: { display: 'inline-block', padding: 10, background: '#0b0b0c', borderRadius: 54, boxShadow: '0 0 0 1.5px #2a2a2e, 0 24px 60px rgba(0,0,0,0.28)' },
+  screen: { position: 'relative', borderRadius: 44, overflow: 'hidden' },
+  statusBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 26px 0 30px', fontSize: 15, fontWeight: 600, fontFamily: '-apple-system, "SF Pro Text", "PingFang SC", sans-serif', zIndex: 40, pointerEvents: 'none' },
+  nav: { position: 'absolute', top: 44, left: 0, right: 0, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 30, fontFamily: '-apple-system, "PingFang SC", sans-serif' },
+  navTitle: { fontSize: 17, fontWeight: 500, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  back: { position: 'absolute', left: 6, top: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
+  capsule: { position: 'absolute', top: 48, right: 7, width: 87, height: 32, boxSizing: 'border-box', borderRadius: 16, display: 'flex', alignItems: 'center', zIndex: 50, pointerEvents: 'none' },
+  capsuleHalf: { flex: 1, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  capsuleSep: { width: 0.5, height: 18 },
+  tabBar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 49 + 34, paddingBottom: 34, boxSizing: 'border-box', display: 'flex', zIndex: 30, fontFamily: '-apple-system, "PingFang SC", sans-serif' },
+  tabItem: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, fontSize: 10, cursor: 'pointer' },
+  homeIndicator: { position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', width: 134, height: 5, borderRadius: 999, zIndex: 60, pointerEvents: 'none' },
+};
+function WechatCapsule({ dark }) {
+  const fg = dark ? '#000' : '#fff';
+  const bg = dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.15)';
+  const bd = dark ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.25)';
+  return (
+    <div data-mp-capsule="" data-lint-skip="" style={{ ...wechatFrameStyles.capsule, background: bg, border: `0.5px solid ${bd}` }}>
+      <div style={wechatFrameStyles.capsuleHalf}>
+        <svg width="20" height="6" viewBox="0 0 20 6"><circle cx="3" cy="3" r="2" fill={fg} /><circle cx="10" cy="3" r="2.6" fill={fg} /><circle cx="17" cy="3" r="2" fill={fg} /></svg>
+      </div>
+      <div style={{ ...wechatFrameStyles.capsuleSep, background: bd }} />
+      <div style={wechatFrameStyles.capsuleHalf}>
+        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="none" stroke={fg} strokeWidth="1.6" /><circle cx="9" cy="9" r="2.6" fill={fg} /></svg>
+      </div>
+    </div>
+  );
+}
+function WechatTabBar({ list, active, onChange, color = '#7A7E83', selectedColor = '#111111', backgroundColor = '#ffffff' }) {
+  return (
+    <div data-mp-tabbar="native" data-lint-skip="" style={{ ...wechatFrameStyles.tabBar, background: backgroundColor, borderTop: '0.5px solid rgba(0,0,0,0.12)' }}>
+      {list.map(it => {
+        const on = it.text === active;
+        return (
+          <div key={it.text} style={{ ...wechatFrameStyles.tabItem, color: on ? selectedColor : color }} onClick={() => onChange && onChange(it.text)}>
+            {it.icon ? (typeof it.icon === 'function' ? it.icon(on) : it.icon) : <div style={{ width: 24, height: 24, borderRadius: 6, background: 'currentColor', opacity: on ? 1 : 0.35 }} />}
+            <span>{it.text}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+function wechatIsDark(css) {
+  const m = (css || '').match(/\d+(\.\d+)?/g);
+  if (!m) return false;
+  const [r, g, b] = m.map(Number);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 140;
+}
+function WechatFrame({ children, page = 'pages/index/index', title = '', home = false, nav = 'default', navColor = '#ffffff', navText = 'black', back = false, onBack, tab, tabBar, onTabChange, footer, background = '#ffffff', width = 375, height = 812, time = '9:41' }) {
+  const statusColor = navText === 'white' ? '#fff' : '#000';
+  const hasNativeTab = tabBar && tabBar.list && tabBar.list.length;
+  const top = 84;
+  const bottom = hasNativeTab ? 83 : 0;
+  const footRef = React.useRef(null);
+  const [footH, setFootH] = React.useState(0);
+  const [footBg, setFootBg] = React.useState(null);
+  React.useLayoutEffect(() => {
+    const el = footRef.current;
+    setFootH(el ? el.offsetHeight : 0);
+    const c = el && el.firstElementChild ? getComputedStyle(el.firstElementChild).backgroundColor : null;
+    setFootBg(c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent' ? c : null);
+  });
+  return (
+    <div style={wechatFrameStyles.wrapper}>
+      <div style={{ ...wechatFrameStyles.screen, width, height, background }}
+        data-mp-page={page} data-mp-title={title} data-mp-home={home ? '1' : ''} data-mp-nav={nav}
+        data-mp-nav-color={navColor} data-mp-nav-text={navText} data-mp-tab={tab || ''}
+        data-mp-tabbar-config={hasNativeTab ? JSON.stringify({ list: tabBar.list.map(t => t.text), color: tabBar.color || '#7A7E83', selectedColor: tabBar.selectedColor || '#111111', backgroundColor: tabBar.backgroundColor || '#ffffff' }) : ''}>
+        <div data-mp-chrome="" data-lint-skip="" style={{ ...wechatFrameStyles.statusBar, color: statusColor }}>
+          <span>{time}</span>
+          <svg width="66" height="12" viewBox="0 0 66 12" fill={statusColor}>
+            <rect x="0" y="8" width="3" height="4" rx="1" /><rect x="5" y="6" width="3" height="6" rx="1" /><rect x="10" y="3" width="3" height="9" rx="1" /><rect x="15" y="0" width="3" height="12" rx="1" />
+            <path d="M30 11.2a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4zM25.6 6.4a6.4 6.4 0 018.8 0l-1.1 1.1a4.8 4.8 0 00-6.6 0zM23 3.8a10 10 0 0114 0l-1.1 1.1a8.4 8.4 0 00-11.8 0z" />
+            <rect x="41" y="0.75" width="22" height="10.5" rx="3" fill="none" stroke={statusColor} strokeOpacity="0.45" strokeWidth="1" /><rect x="43" y="2.75" width="16" height="6.5" rx="1.5" /><rect x="64" y="4" width="1.5" height="4" rx="0.75" fillOpacity="0.45" />
+          </svg>
+        </div>
+        {nav === 'default' && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: top, background: navColor, zIndex: 25 }} />}
+        {nav === 'default' && (
+          <div style={{ ...wechatFrameStyles.nav, color: statusColor }}>
+            {back && (
+              <div style={wechatFrameStyles.back} onClick={onBack}>
+                <svg width="12" height="20" viewBox="0 0 12 20"><path d="M10 2L2 10l8 8" fill="none" stroke={statusColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </div>
+            )}
+            <div style={wechatFrameStyles.navTitle}>{title}</div>
+          </div>
+        )}
+        <WechatCapsule dark={navText !== 'white'} />
+        <div data-mp-scroll="" style={{ position: 'absolute', top: nav === 'default' ? top : 0, left: 0, right: 0, bottom: bottom + footH, overflow: 'auto' }}>
+          {children}
+        </div>
+        {footer && <div ref={footRef} data-mp-footer="" style={{ position: 'absolute', left: 0, right: 0, bottom, zIndex: 40, paddingBottom: hasNativeTab ? 0 : 34, background: footBg || background }}>{footer}</div>}
+        {hasNativeTab && <WechatTabBar {...tabBar} active={tab} onChange={onTabChange} />}
+        <div style={{ ...wechatFrameStyles.homeIndicator, background: (!hasNativeTab && (footBg ? wechatIsDark(footBg) : navText === 'white')) ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.85)' }} />
+      </div>
+    </div>
+  );
+}
+function WechatShareCard({ appName, title, icon, children, width = 236 }) {
+  const imgW = width - 16;
+  return (
+    <div style={{ width, background: '#fff', borderRadius: 6, padding: '10px 8px 0', boxSizing: 'border-box', fontFamily: '-apple-system, "PingFang SC", sans-serif', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
+      <div data-lint-skip="" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888', marginBottom: 6 }}>
+        <div style={{ width: 16, height: 16, borderRadius: 999, overflow: 'hidden', background: '#eee', flexShrink: 0 }}>{icon}</div>
+        <span>{appName}</span>
+      </div>
+      <div style={{ fontSize: 14, color: '#111', lineHeight: 1.4, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{title}</div>
+      <div data-mp-share="" style={{ width: imgW, height: imgW * 4 / 5, overflow: 'hidden', background: '#f2f2f2', position: 'relative' }}>{children}</div>
+      <div data-lint-skip="" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#999', borderTop: '0.5px solid #eee', marginTop: 8, padding: '6px 0' }}>
+        <svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="none" stroke="#7d7df0" strokeWidth="1.4" /><circle cx="6" cy="6" r="1.8" fill="#7d7df0" /></svg>
+        <span>小程序</span>
+      </div>
+    </div>
+  );
+}
+function ShowboardLabel({ s, theme, width }) {
+  return (
+    <div style={{ width, marginBottom: 10 }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: theme.fg, lineHeight: 1.3 }}>{s.label}</div>
+      {s.note && <div style={{ fontSize: 13, color: theme.muted, lineHeight: 1.5, marginTop: 2 }}>{s.note}</div>}
+    </div>
+  );
+}
+function ShowboardPhone({ s, theme, x, y, scale, phoneW, phoneH }) {
+  return (
+    <div style={{ position: 'absolute', left: x, top: y, width: phoneW * scale }}>
+      <ShowboardLabel s={s} theme={theme} width={phoneW * scale} />
+      <div style={{ width: phoneW * scale, height: phoneH * scale }}>
+        <div style={{ transform: `scale(${scale})`, transformOrigin: '0 0', width: phoneW }}>{s.node}</div>
+      </div>
+    </div>
+  );
+}
+function Showboard({ layout = 'hero', theme = {}, title, kicker, lede, screens = [], closeup, aside, phoneW = 395, phoneH = 832, footnote }) {
+  const t = { bg: '#F2F1EC', fg: '#1B1B1B', muted: '#6B6B66', accent: '#C2410C', font: 'inherit', ...theme };
+  const W = 1440, M = 56;
+  const mainIdx = Math.max(0, screens.findIndex((s) => s.main));
+  const main = screens[mainIdx], rest = screens.filter((_, i) => i !== mainIdx);
+  const LABEL = 56;
+  const placed = [];
+  let lines = [], close = null, asidePos = null, height = 0;
+  if (layout === 'hero') {
+    const big = 0.95, small = 0.76;
+    const my = 250;
+    placed.push({ s: main, x: M, y: my, scale: big });
+    const colX = [M + phoneW * big + 56, M + phoneW * big + 56 + phoneW * small + 36];
+    rest.forEach((s, i) => {
+      const col = i % 2, row = Math.floor(i / 2);
+      placed.push({ s, x: colX[col], y: my - 40 + (col ? 140 : 0) + row * (phoneH * small + LABEL + 36), scale: small });
+    });
+    asidePos = { x: colX[1] + phoneW * small + 56, y: my + 40, w: W - M - (colX[1] + phoneW * small + 56) };
+  } else if (layout === 'flow') {
+    const sc = 0.8, step = phoneW * sc + 70;
+    const perRow = Math.max(1, Math.floor((W - 2 * M + 70) / step));
+    screens.forEach((s, i) => {
+      const row = Math.floor(i / perRow), col = i % perRow;
+      const x = M + col * step, y = 250 + row * (phoneH * sc + LABEL + 90) + col * 46;
+      placed.push({ s, x, y, scale: sc });
+      if (i > 0 && col > 0) {
+        const p = placed[i - 1];
+        lines.push({ x1: p.x + phoneW * sc - 6, y1: p.y + LABEL + phoneH * sc * 0.55, x2: x + 6, y2: y + LABEL + phoneH * sc * 0.45, via: s.via });
+      }
+    });
+    asidePos = { x: W - M - 300, y: 40, w: 300 };
+  } else {
+    const sc = 1.0;
+    placed.push({ s: main, x: M, y: 240, scale: sc });
+    const cx = M + phoneW * sc + 60, cw = 520;
+    close = { x: cx, y: 240, w: cw };
+    rest.slice(0, 3).forEach((s, i) => placed.push({ s, x: cx + cw + 56, y: 150 + i * (phoneH * 0.62 + LABEL + 24), scale: 0.62 }));
+    rest.slice(3).forEach((s, i) => placed.push({ s, x: cx + i * (phoneW * 0.62 + 30), y: 240 + LABEL + 560 + 40, scale: 0.62 }));
+    asidePos = { x: cx, y: 40, w: cw };
+  }
+  placed.forEach((p) => { height = Math.max(height, p.y + LABEL + phoneH * p.scale + M); });
+  if (close) height = Math.max(height, close.y + 600);
+  return (
+    <div data-showboard={layout} style={{ position: 'relative', width: W, height, background: t.bg, color: t.fg, fontFamily: t.font, overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', left: M, top: 56, width: layout === 'closeup' ? 340 : 760 }}>
+        {kicker && <div style={{ fontSize: 14, color: t.accent, fontWeight: 700, marginBottom: 10 }}>{kicker}</div>}
+        <div style={{ fontSize: layout === 'flow' ? 64 : 56, fontWeight: 800, lineHeight: 1.05 }}>{title}</div>
+        {lede && <div style={{ fontSize: 16, lineHeight: 1.65, color: t.fg, opacity: 0.86, marginTop: 18 }}>{lede}</div>}
+      </div>
+      {lines.length > 0 && (
+        <svg width={W} height={height} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          {lines.map((l, i) => (
+            <g key={i}>
+              <path d={`M${l.x1},${l.y1} C${(l.x1 + l.x2) / 2},${l.y1} ${(l.x1 + l.x2) / 2},${l.y2} ${l.x2},${l.y2}`} fill="none" stroke={t.accent} strokeWidth="2" strokeDasharray="5 5" />
+              <circle cx={l.x2} cy={l.y2} r="4" fill={t.accent} />
+              {l.via && <text x={(l.x1 + l.x2) / 2} y={(l.y1 + l.y2) / 2 - 10} textAnchor="middle" fontSize="13" fill={t.muted}>{l.via}</text>}
+            </g>
+          ))}
+        </svg>
+      )}
+      {placed.map((p, i) => <ShowboardPhone key={i} {...p} theme={t} phoneW={phoneW} phoneH={phoneH} />)}
+      {close && closeup && (
+        <div style={{ position: 'absolute', left: close.x, top: close.y, width: close.w }}>
+          <ShowboardLabel s={closeup} theme={t} width={close.w} />
+          <div style={{ width: close.w, height: 560, overflow: 'hidden', borderRadius: 18, background: t.fg === '#1B1B1B' ? '#fff' : 'rgba(255,255,255,0.06)', padding: 24 }}>
+            <div style={{ zoom: closeup.scale || 2, width: (close.w - 48) / (closeup.scale || 2) }}>{closeup.node}</div>
+          </div>
+        </div>
+      )}
+      {aside && asidePos && <div style={{ position: 'absolute', left: asidePos.x, top: asidePos.y, width: asidePos.w }}>{aside}</div>}
+      {footnote && <div style={{ position: 'absolute', left: M, bottom: 28, fontSize: 12, color: t.muted }}>{footnote}</div>}
+    </div>
+  );
+}
+Object.assign(window, { WechatFrame, WechatCapsule, WechatTabBar, WechatShareCard, Showboard });
+
+/* ============ dir-2 · 枕边故事书 ============ */
+const C2 = {
+  paper: '#F7F1E5', paperDeep: '#F1E8D6', ink: '#2B2622', inkSoft: '#6E6459',
+  persimmon: '#D96C3F', persimmonDeep: '#B8532C', line: 'rgba(43,38,34,0.16)', hair: 'rgba(43,38,34,0.28)',
+  serif: '"KaiTi", "STKaiti", "SimSun", serif',
+  sans: '-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif',
+};
+const IMG2 = {
+  xiaohongmao: '../assets/cover-xiaohongmao.jpg',
+  xiaozhu: '../assets/cover-sanzhixiaozhu.jpg',
+  yueliang: '../assets/cover-yueliang.jpg',
+  huoqubing: '../assets/cover-huoqubing.jpg',
+  tiankong: '../assets/cover-tiankong.jpg',
+  baoshi: '../assets/cover-baoshi.jpg',
+  herovision: '../assets/main-herovision.jpg',
+};
+const TOC = [
+  { id: 1, title: '小红帽', sub: '格林兄弟 · 甜甜姐姐 讲', dur: '5:12', img: IMG2.xiaohongmao, mark: false },
+  { id: 2, title: '三只小猪', sub: '佚名 · 甜甜姐姐 讲', dur: '7:08', img: IMG2.xiaozhu, mark: false },
+  { id: 3, title: '月亮的秘密', sub: '原创 · 阿哲哥哥 讲', dur: '10:05', img: IMG2.yueliang, mark: true },
+  { id: 4, title: '少年将军霍去病', sub: '历史组 · 老韩 讲', dur: '15:10', img: IMG2.huoqubing, mark: false },
+];
+const SHELVES = [
+  { name: '哄睡架上', desc: '越听越困的那几本', count: 12, img: IMG2.yueliang },
+  { name: '白天架上', desc: '吃饭路上磨耳朵', count: 18, img: IMG2.tiankong },
+  { name: '老故事架上', desc: '我们小时候也听过的', count: 15, img: IMG2.xiaohongmao },
+  { name: '涨知识架上', desc: '星星为什么眨眼', count: 9, img: IMG2.baoshi },
+];
+
+function TabIcon2({ kind, on }) {
+  const stroke = on ? C2.persimmon : C2.inkSoft;
+  const sw = 1.7;
+  if (kind === 'home') return (
+    <svg width="22" height="22" viewBox="0 0 22 22"><path d="M3.5 9.5 L11 3.5 L18.5 9.5 V18 a1 1 0 0 1 -1 1 H4.5 a1 1 0 0 1 -1 -1 Z" fill="none" stroke={stroke} strokeWidth={sw} strokeLinejoin="round" /><path d="M8.5 19 v-5.5 a1 1 0 0 1 1 -1 h3 a1 1 0 0 1 1 1 V19" fill="none" stroke={stroke} strokeWidth={sw} /></svg>
+  );
+  if (kind === 'cat') return (
+    <svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 5.5 h14 M4 11 h14 M4 16.5 h9" stroke={stroke} strokeWidth={sw} strokeLinecap="round" /></svg>
+  );
+  if (kind === 'search') return (
+    <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="10" cy="10" r="6" fill="none" stroke={stroke} strokeWidth={sw} /><path d="M14.5 14.5 L18 18" stroke={stroke} strokeWidth={sw} strokeLinecap="round" /></svg>
+  );
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="7.5" r="3.6" fill="none" stroke={stroke} strokeWidth={sw} /><path d="M4.5 18.5 a6.5 5 0 0 1 13 0" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" /></svg>
+  );
+}
+const TAB2_LIST = [
+  { text: '今晚', icon: (on) => <TabIcon2 kind="home" on={on} /> },
+  { text: '书架', icon: (on) => <TabIcon2 kind="cat" on={on} /> },
+  { text: '找一找', icon: (on) => <TabIcon2 kind="search" on={on} /> },
+  { text: '我的', icon: (on) => <TabIcon2 kind="mine" on={on} /> },
+];
+
+/* —— 书页通用元素 —— */
+function PageHead({ left, right }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: `1px solid ${C2.hair}`, paddingBottom: 10 }}>
+      <div style={{ fontSize: 12.5, color: C2.inkSoft, letterSpacing: 2, fontFamily: C2.serif }}>{left}</div>
+      <div style={{ fontSize: 12.5, color: C2.persimmon, letterSpacing: 2, fontFamily: C2.serif }}>{right}</div>
+    </div>
+  );
+}
+function Bookmark({ text }) {
+  // 柿橙书签带：全站唯一的颜色
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: C2.persimmon, color: '#FBF6EA', fontSize: 13.5, fontWeight: 600, padding: '10px 16px', borderRadius: 3, boxShadow: '0 3px 10px rgba(184,83,44,0.3)', cursor: 'pointer', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%)', paddingBottom: 16 }}>
+      {text}
+    </div>
+  );
+}
+function TocLine({ st, onClick }) {
+  return (
+    <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 2px', borderBottom: `1px solid ${C2.line}`, cursor: 'pointer' }}>
+      <div style={{ width: 44, height: 44, borderRadius: 3, overflow: 'hidden', boxShadow: '0 1px 4px rgba(43,38,34,0.25)', flexShrink: 0 }}>
+        <img src={st.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 15.5, fontFamily: C2.sans, fontWeight: 700, color: C2.ink, letterSpacing: 1 }}>{st.title}</div>
+        <div style={{ fontSize: 11.5, color: C2.inkSoft, marginTop: 3 }}>{st.sub}</div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        {st.mark && <div style={{ width: 7, height: 12, background: C2.persimmon, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 70%, 0 100%)' }} />}
+        <div style={{ fontSize: 12.5, color: C2.inkSoft, fontFamily: C2.serif }}>{st.dur}</div>
+      </div>
+    </div>
+  );
+}
+
+/* —— 屏：首页（今晚这一页） —— */
+function Home2Screen({ state }) {
+  const s = state;
+  const current = TOC[2];
+  return (
+    <div style={{ minHeight: '100%', background: C2.paper, padding: '14px 24px 40px', color: C2.ink, position: 'relative' }}>
+      {/* 版心呼吸：上提，天头小 */}
+      <PageHead left="枕边故事集" right="十一月廿三 · 晚" />
+      <div style={{ marginTop: 22 }}>
+        <div style={{ fontSize: 26, fontFamily: C2.serif, letterSpacing: 3, lineHeight: 1.45 }}>今晚，<br />接着读第 42 页</div>
+        <div style={{ fontSize: 13, color: C2.inkSoft, marginTop: 10, lineHeight: 1.8 }}>《{current.title}》读到 4:12，还剩 5 分 53 秒。</div>
+        <div style={{ marginTop: 16 }}><Bookmark text="从书签处读起" /></div>
+      </div>
+      {/* 今晚的一页：画片 */}
+      <div style={{ marginTop: 26, textAlign: 'center' }}>
+        <div style={{ width: 210, height: 210, margin: '0 auto', background: '#FFFFFF', padding: 10, boxShadow: '0 4px 18px rgba(43,38,34,0.14), 0 1px 3px rgba(43,38,34,0.12)' }}>
+          <img src={current.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        </div>
+        <div style={{ fontSize: 11.5, color: C2.inkSoft, marginTop: 10, letterSpacing: 3, fontFamily: C2.serif }}>—— 月亮的秘密 · 插图 ——</div>
+      </div>
+      {/* 目录行 */}
+      <div style={{ marginTop: 26 }}>
+        <div style={{ fontSize: 15, fontFamily: C2.sans, fontWeight: 700, letterSpacing: 4, marginBottom: 4 }}>目录</div>
+        {TOC.map((st) => <TocLine key={st.id} st={st} onClick={() => s.open(st.id === 3 ? 'player' : 'detail')} />)}
+      </div>
+      {/* 地脚大留白 */}
+      <div style={{ marginTop: 40, textAlign: 'center', fontSize: 11.5, color: C2.inkSoft, letterSpacing: 4, fontFamily: C2.serif }}>
+        · 读完了就早些睡 ·
+      </div>
+    </div>
+  );
+}
+
+/* —— 屏：书架（分类） —— */
+function Shelf2Screen({ state }) {
+  const s = state;
+  return (
+    <div style={{ minHeight: '100%', background: C2.paper, padding: '14px 24px 40px', color: C2.ink }}>
+      <PageHead left="枕边故事集" right="四个架子" />
+      <div style={{ fontSize: 26, fontFamily: C2.serif, letterSpacing: 3, marginTop: 22 }}>书架</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 20 }}>
+        {SHELVES.map((sh, i) => (
+          <div key={sh.name} onClick={() => s.open('detail')} style={{ display: 'flex', gap: 16, alignItems: 'center', cursor: 'pointer', borderBottom: `1px solid ${C2.line}`, paddingBottom: 18 }}>
+            <div style={{ width: 72, height: 56, background: '#FFFFFF', padding: 5, boxShadow: '0 2px 10px rgba(43,38,34,0.14)', flexShrink: 0 }}>
+              <img src={sh.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 16.5, fontFamily: C2.sans, fontWeight: 700, letterSpacing: 1 }}>{sh.name}</div>
+              <div style={{ fontSize: 12, color: C2.inkSoft, marginTop: 4 }}>{sh.desc}</div>
+              <div style={{ fontSize: 11.5, color: C2.persimmonDeep, marginTop: 5, fontFamily: C2.serif }}>{sh.count} 本</div>
+            </div>
+            <div style={{ fontSize: 12, color: C2.inkSoft, fontFamily: C2.serif }}>{'＋'.replace('＋', i === 0 ? '▸' : '▸')}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* —— 屏：我的（藏书页） —— */
+function Mine2Screen({ state }) {
+  const s = state;
+  return (
+    <div style={{ minHeight: '100%', background: C2.paper, padding: '14px 24px 40px', color: C2.ink }}>
+      <PageHead left="枕边故事集" right="我的书桌" />
+      <div style={{ marginTop: 24, textAlign: 'center' }}>
+        <div style={{ fontSize: 30, fontFamily: C2.serif, letterSpacing: 3 }}>21 晚</div>
+        <div style={{ fontSize: 12.5, color: C2.inkSoft, marginTop: 6 }}>桃桃妈妈和你已经一起读了这么多晚</div>
+      </div>
+      <div style={{ marginTop: 24, borderBottom: `1px solid ${C2.line}` }}>
+        {[
+          { t: '夹了书签的故事', n: '2 本' },
+          { t: '读过的', n: '6 本' },
+          { t: '哄睡铃 · 每晚 20:30', n: '开着' },
+        ].map((r, i) => (
+          <div key={r.t} onClick={() => s.open('detail')} style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 2px', borderBottom: i < 2 ? `1px solid ${C2.line}` : 'none', cursor: 'pointer' }}>
+            <div style={{ fontSize: 14.5, fontFamily: C2.serif }}>{r.t}</div>
+            <div style={{ fontSize: 13, color: r.n === '开着' ? C2.persimmon : C2.inkSoft, fontFamily: C2.serif }}>{r.n}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 36, textAlign: 'center', fontSize: 11.5, color: C2.inkSoft, letterSpacing: 4, fontFamily: C2.serif }}>· 枕边故事集 · 内测 ·</div>
+    </div>
+  );
+}
+
+/* —— 屏：播放（读这一页） —— */
+function Player2Screen({ state }) {
+  const s = state;
+  const st = TOC[2];
+  const [playing, setPlaying] = React.useState(true);
+  const [sleepOn, setSleepOn] = React.useState(false);
+  return (
+    <div style={{ minHeight: '100%', background: C2.paper, padding: '0 24px 30px', color: C2.ink, display: 'flex', flexDirection: 'column' }}>
+      {/* 画片 */}
+      <div style={{ marginTop: 18, textAlign: 'center' }}>
+        <div style={{ width: 230, height: 230, margin: '0 auto', background: '#FFFFFF', padding: 12, boxShadow: '0 5px 22px rgba(43,38,34,0.16), 0 1px 3px rgba(43,38,34,0.12)', position: 'relative' }}>
+          <img src={st.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          {playing && <div style={{ position: 'absolute', top: 18, left: 18, width: 12, height: 18, background: C2.persimmon, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 70%, 0 100%)' }} />}
+        </div>
+        <div style={{ fontSize: 11, color: C2.inkSoft, marginTop: 10, letterSpacing: 3, fontFamily: C2.serif }}>—— 月亮的秘密 · 这一夜 ——</div>
+      </div>
+      {/* 书名与进度 */}
+      <div style={{ marginTop: 24, textAlign: 'center' }}>
+        <div style={{ fontSize: 24, fontFamily: C2.serif, letterSpacing: 4 }}>{st.title}</div>
+        <div style={{ fontSize: 12.5, color: C2.inkSoft, marginTop: 6, fontFamily: C2.serif }}>{st.sub}</div>
+        <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ flex: 1, height: 2, background: C2.line, position: 'relative' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '42%', background: C2.persimmon }} />
+          </div>
+          <div style={{ fontSize: 12.5, color: C2.inkSoft, fontFamily: C2.serif, flexShrink: 0 }}>页码 4:12 / 10:05</div>
+        </div>
+      </div>
+      {/* 控制：像翻页 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 30, marginTop: 26 }}>
+        <div onClick={() => {}} style={{ textAlign: 'center', cursor: 'pointer' }}>
+          <svg width="26" height="26" viewBox="0 0 26 26"><path d="M6 22 h10 a2 2 0 0 0 2 -2 V8 a2 2 0 0 0 -2 -2 H6" fill="none" stroke={C2.inkSoft} strokeWidth="1.6" /><path d="M13 3 L6 3 L6 10" fill="none" stroke={C2.inkSoft} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" transform="rotate(180 9.5 6.5)"/><path d="M18 6 L24 6 L24 20 L18 20" fill="none" stroke={C2.inkSoft} strokeWidth="1.6" opacity="0.5" /></svg>
+          <div style={{ fontSize: 10.5, color: C2.inkSoft, marginTop: 4 }}>回半页</div>
+        </div>
+        <div onClick={() => setPlaying(!playing)} style={{ width: 62, height: 62, borderRadius: 999, border: `2px solid ${C2.persimmon}`, background: playing ? C2.persimmon : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          {playing
+            ? <svg width="16" height="16" viewBox="0 0 16 16"><rect x="3.5" y="2.5" width="3" height="11" rx="0.5" fill="#FBF6EA" /><rect x="9.5" y="2.5" width="3" height="11" rx="0.5" fill="#FBF6EA" /></svg>
+            : <svg width="16" height="16" viewBox="0 0 16 16"><path d="M5 2.5 L13 8 L5 13.5 Z" fill={C2.persimmon} /></svg>}
+        </div>
+        <div onClick={() => {}} style={{ textAlign: 'center', cursor: 'pointer' }}>
+          <svg width="26" height="26" viewBox="0 0 26 26"><path d="M10 22 h10 a2 2 0 0 0 2 -2 V8 a2 2 0 0 0 -2 -2 H10" fill="none" stroke={C2.inkSoft} strokeWidth="1.6" transform="translate(-2 0)" /><path d="M16 3 L10 3 L10 10" fill="none" stroke={C2.inkSoft} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" transform="rotate(180 13 6.5)"/><path d="M2 6 L8 6 L8 20 L2 20" fill="none" stroke={C2.inkSoft} strokeWidth="1.6" opacity="0.5" /></svg>
+          <div style={{ fontSize: 10.5, color: C2.inkSoft, marginTop: 4 }}>翻半页</div>
+        </div>
+      </div>
+      {/* 合上开关 */}
+      <div onClick={() => setSleepOn(!sleepOn)} style={{ marginTop: 24, margin: '24px auto 0', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', border: `1px solid ${sleepOn ? C2.persimmon : C2.line}`, borderRadius: 999, padding: '8px 16px' }}>
+        <div style={{ width: 30, height: 16, borderRadius: 999, background: sleepOn ? C2.persimmon : C2.line, position: 'relative', transition: 'background 0.3s' }}>
+          <div style={{ position: 'absolute', top: 2, left: sleepOn ? 16 : 2, width: 12, height: 12, borderRadius: 999, background: '#fff', transition: 'left 0.3s' }} />
+        </div>
+        <div style={{ fontSize: 12.5, fontFamily: C2.serif, color: sleepOn ? C2.persimmonDeep : C2.inkSoft }}>{sleepOn ? '这页讲完就合上' : '读完这页不停'}</div>
+      </div>
+      {/* 页脚 */}
+      <div style={{ marginTop: 'auto', paddingTop: 24, borderTop: `1px solid ${C2.line}`, display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: C2.inkSoft, fontFamily: C2.serif }}>
+        <span>枕边故事集</span>
+        <span>{sleepOn ? '合上 · 20:52' : '继续 · 20:52'}</span>
+      </div>
+    </div>
+  );
+}
+
+/* —— 屏：详情（一册书） —— */
+function Detail2Screen({ state }) {
+  const s = state;
+  return (
+    <div style={{ minHeight: '100%', background: C2.paper, padding: '0 24px 30px', color: C2.ink }}>
+      <div style={{ marginTop: 14, textAlign: 'center' }}>
+        <div style={{ width: 190, height: 190, margin: '0 auto', background: '#FFFFFF', padding: 10, boxShadow: '0 4px 18px rgba(43,38,34,0.14)' }}>
+          <img src={IMG2.baoshi} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        </div>
+        <div style={{ fontSize: 23, fontFamily: C2.serif, letterSpacing: 4, marginTop: 16 }}>消失的宝石</div>
+        <div style={{ fontSize: 12, color: C2.inkSoft, marginTop: 6, fontFamily: C2.serif }}>悬疑组 写 · 阿哲哥哥 讲 · 共 2 章</div>
+        <div style={{ marginTop: 16, display: 'inline-block', fontSize: 13.5, color: '#FBF6EA', background: C2.persimmon, padding: '10px 26px', borderRadius: 3, cursor: 'pointer', fontFamily: C2.sans, fontWeight: 700, letterSpacing: 2, boxShadow: '0 3px 10px rgba(184,83,44,0.3)' }} onClick={() => s.open('player')}>从第一章读起</div>
+      </div>
+      <div style={{ marginTop: 24 }}>
+        <div style={{ fontSize: 14, fontFamily: C2.sans, fontWeight: 700, letterSpacing: 3, marginBottom: 8 }}>内容简介</div>
+        <div style={{ fontSize: 13.5, lineHeight: 1.9, color: C2.inkSoft, fontFamily: C2.serif }}>老管家说宝石自己长了腿——可它明明被锁在盒子里。三个孩子跟着线索，在古堡里找了一整晚。</div>
+      </div>
+      <div style={{ marginTop: 22 }}>
+        <div style={{ fontSize: 14, fontFamily: C2.sans, fontWeight: 700, letterSpacing: 3, marginBottom: 4 }}>目录</div>
+        {[
+          { n: '一', t: '古堡来客', d: '9:40' },
+          { n: '二', t: '失踪的宝石', d: '10:00' },
+        ].map((ep) => (
+          <div key={ep.n} onClick={() => s.open('player')} style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '12px 2px', borderBottom: `1px solid ${C2.line}`, cursor: 'pointer' }}>
+            <div style={{ fontSize: 13, color: C2.persimmon, fontFamily: C2.serif, flexShrink: 0 }}>{ep.n}</div>
+            <div style={{ fontSize: 15, fontFamily: C2.serif, flex: 1 }}>{ep.t}</div>
+            <div style={{ fontSize: 12.5, color: C2.inkSoft, fontFamily: C2.serif }}>{ep.d}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* —— 手机容器 —— */
+function Phone2({ initial }) {
+  const [tab, setTab] = React.useState(['home', 'shelf', 'mine'].includes(initial) ? initial : 'home');
+  const [page, setPage] = React.useState(['player', 'detail'].includes(initial) ? initial : null);
+  const state = { setTab: (t) => { setTab(t); setPage(null); }, open: () => setPage('player'), back: () => setPage(null) };
+  const tabBar = { list: TAB2_LIST, color: C2.inkSoft, selectedColor: C2.persimmon, backgroundColor: C2.paper };
+  const screens = { home: Home2Screen, shelf: Shelf2Screen, mine: Mine2Screen };
+  const titles = { home: '枕边故事集', shelf: '书架', mine: '我的书桌', player: '正在读', detail: '一册书' };
+  const path = { home: 'pages/index/index', shelf: 'pages/category/category', mine: 'pages/mine/mine', player: 'pages/player/player', detail: 'pages/detail/detail' };
+  const ScreenComp = page === 'player' ? Player2Screen : page === 'detail' ? Detail2Screen : screens[tab];
+  return (
+    <WechatFrame
+      page={path[page || tab]} title={titles[page || tab]} home={!page && tab === 'home'}
+      navColor={C2.paper} navText="black" back={!!page} onBack={state.back}
+      tab={page ? undefined : tab} tabBar={page ? undefined : tabBar} onTabChange={state.setTab}
+      background={C2.paper}
+    >
+      <ScreenComp state={state} />
+    </WechatFrame>
+  );
+}
+
+/* —— 特写：书签进度 —— */
+function BookmarkCloseup() {
+  const st = TOC[2];
+  return (
+    <div style={{ width: 460, background: C2.paper, padding: '26px 30px', color: C2.ink, fontFamily: C2.sans }}>
+      <div style={{ fontSize: 24, fontFamily: C2.serif, letterSpacing: 3 }}>读到第 42 页</div>
+      <div style={{ fontSize: 13, color: C2.inkSoft, marginTop: 8 }}>《月亮的秘密》· 4:12 / 10:05</div>
+      <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1, height: 3, background: C2.line, position: 'relative' }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '42%', background: C2.persimmon }} />
+        </div>
+        <div style={{ width: 16, height: 26, background: C2.persimmon, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 70%, 0 100%)' }} />
+      </div>
+      <div style={{ marginTop: 20, display: 'flex', gap: 14 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', background: C2.persimmon, color: '#FBF6EA', fontSize: 14, fontWeight: 700, padding: '12px 20px', borderRadius: 3, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%)', paddingBottom: 18 }}>从书签处读起</div>
+        <div style={{ display: 'inline-flex', alignItems: 'center', border: `1.5px solid ${C2.hair}`, color: C2.ink, fontSize: 14, padding: '12px 20px', borderRadius: 3 }}>从头读</div>
+      </div>
+      <div style={{ marginTop: 22, fontSize: 12.5, color: C2.inkSoft, lineHeight: 1.8 }}>
+        柿橙书签带是全页唯一的颜色：夹在哪本故事里，一眼就找到昨晚读到哪。
+      </div>
+    </div>
+  );
+}
+
+function Board2() {
+  return (
+    <Showboard
+      layout="closeup"
+      theme={{ bg: '#EFE7D6', fg: '#2B2622', muted: '#6E6459', accent: '#D96C3F', font: C2.sans }}
+      kicker="方向二 · 枕边故事书"
+      title="睡前，翻一页"
+      lede="故事本来就是书。整个小程序是一册每晚翻几页的故事集：暖纸版心、目录行、书签带——柿橙只给一个地方，就是昨晚停下的那一页。"
+      screens={[
+        { label: '正在读', note: '画片居中，页码即进度', main: true, node: <Phone2 initial="player" /> },
+        { label: '首页 · 今晚这一页', note: '书签带指着第 42 页', node: <Phone2 initial="home" /> },
+        { label: '书架', note: '按孩子的状态分架', node: <Phone2 initial="shelf" /> },
+        { label: '详情 · 一册书', note: '扉页、简介、目录', node: <Phone2 initial="detail" /> },
+      ]}
+      closeup={{ label: '特写 · 书签带', note: '全站唯一的颜色，只给「昨晚停下的那一页」', node: <BookmarkCloseup />, scale: 1.6 }}
+      aside={
+        <div>
+          <WechatShareCard appName="枕边故事集" title="今晚读到第 42 页：月亮的秘密" icon={<img src={IMG2.yueliang} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}>
+            <img src={IMG2.yueliang} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </WechatShareCard>
+          <div style={{ marginTop: 16, fontSize: 12.5, lineHeight: 1.8, color: C2.inkSoft }}>
+            <div style={{ color: C2.ink, fontWeight: 700, marginBottom: 6 }}>借了什么</div>
+            吕敬人书籍设计的「版心呼吸」（天头小、地脚大、信息住进留白）与「一色只用一处」。<br />
+            儿童绘本化：碑拓与藏书气质不要，纸感做柔，衬线只给标题与页码。
+            <div style={{ color: C2.ink, fontWeight: 700, margin: '10px 0 6px' }}>主入口假设</div>
+            家长群里那张转发卡片进来的第一眼：这是一册能接着读的书，不是又一个音频播放器。
+          </div>
+        </div>
+      }
+      footnote="插画为 AI 生成的设计稿素材 · 375 宽设计基准（1px = 2rpx）· 每台手机均可点击"
+    />
+  );
+}
+const root2 = ReactDOM.createRoot(document.getElementById('root'));
+root2.render(<Board2 />);
+</script>
+</body>
+</html>

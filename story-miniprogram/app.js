@@ -5,6 +5,8 @@ App({
     appName: '听故事',
     // 当前播放中的故事（播放器页与首页迷你播放器共享）
     playingStory: null,
+    // 首页胶囊 → 分类页：待选中的分类 id
+    pendingCategory: null,
   },
 
   onLaunch() {
