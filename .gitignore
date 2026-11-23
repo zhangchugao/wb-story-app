@@ -25,3 +25,6 @@ story-backend/_legacy/
 # 后端生成的静态文件（封面可由 tools 脚本重新生成）
 **/storage/static/*
 !**/storage/static/.gitkeep
+
+# 设计工具临时产物
+story-redesign/.temp/
